@@ -1,7 +1,413 @@
 ---
-title: "Lab 1"
+title: Lab 1
+echo: false
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    embed-resources: true
 ---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
 
-## Quarto
+```{python}
+import statsmodels.api as sm
+from plotnine import *
+import pandas as pd
+import numpy as np
+```
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+# Task 1
+
+1. The aesthetics being used in this graph are:
+    - Set y-axis scale
+    - Logarithmic x-axis scale
+    - White background with grey gridlines
+    - Points are colored by region
+    - Point size is scaled by population
+    - Large text display of the year in background
+    - X-axis is around twice as long as y-axis is tall
+    - No legend
+
+2. Data downloaded
+
+3. Recreation of the plot:
+```{python}
+df = pd.read_csv("C:/Users/tyler/Downloads/q1data.csv")
+df = df.dropna()
+
+xmin, xmax = 500, 128000
+xmid = np.sqrt(xmin * xmax)
+ymid = 45
+
+(ggplot(df,
+aes(
+  x = "income",
+  y = "life_exp",
+  fill = "four_regions",
+  size = "population"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_point(shape='o', stroke=0.15, color="black")
++ scale_fill_manual(
+    values={
+        "americas": "#5DD43C",
+        "africa": "#27C8EB",
+        "europe": "#FFE032",
+        "asia": "#F25C6E"
+        }
+    )
++ scale_x_log10(
+        name='Income',
+        limits=(xmin, xmax),
+        breaks=[500, 1000, 2000, 4000, 8000, 16000, 32000, 64000],
+        labels=["500", "1000", "2000", "4000", "8000", "16k", "32k", "64k"]
+    )
++ scale_y_continuous(
+        name='Life Expectancy',
+        limits=(10, 90),
+        breaks=list(range(20, 91, 10)),
+    )
++ scale_size(range=[0.5, 15])
++ coord_fixed(ratio=0.01)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_blank(),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
+)
+```
+
+4. Alternative plot, a plot that focuses on the relationship between income and life_exp could work well, however the initial plot somewhat does this and displays population, making it cleaner and more digestible.
+```{python}
+(ggplot(df,
+aes(
+  x = "income",
+  y = "life_exp",
+  fill = "four_regions"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_point(shape='o', stroke=0.15, color="black")
++ geom_smooth(method="lm", color="blue", fill="orange")
++ scale_x_log10(
+        name='Income',
+        limits=(xmin, xmax),
+        breaks=[500, 1000, 2000, 4000, 8000, 16000, 32000, 64000],
+        labels=["500", "1000", "2000", "4000", "8000", "16k", "32k", "64k"]
+    )
++ scale_y_continuous(
+        name='Life Expectancy',
+        limits=(10, 90),
+        breaks=list(range(20, 91, 10)),
+    )
++ scale_size(range=[0.5, 15])
++ coord_fixed(ratio=0.01)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_blank(),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
++ scale_fill_manual(
+    values={
+        "americas": "#5DD43C",
+        "africa": "#27C8EB",
+        "europe": "#FFE032",
+        "asia": "#F25C6E"
+        }
+    )
+)
+```
+
+# Task 2
+
+1. The aesthetics being used in this graph are:
+    - Set y-axis scale
+    - Set x-axis scale
+    - White background with grey gridlines
+    - Points are colored by region
+    - Point size is scaled by energy usage
+    - Large text display of the year in background
+    - X-axis is around twice as long as y-axis is tall
+    - Y-axis begins below 0 to allow all countries to fit inside the plot
+    - No legend
+
+2. Data downloaded
+
+3. Recreation of the plot:
+```{python}
+df = pd.read_csv("C:/Users/tyler/Downloads/q2data.csv")
+df = df.dropna()
+
+df["energy"] = (
+    df["energy"]
+    .astype(str)
+    .str.replace("k", "", regex=False)
+    .astype(float) * 1000
+).astype(int)  
+
+xmid = 120
+ymid = 225
+
+(ggplot(df,
+aes(
+  x = "exports",
+  y = "imports",
+  fill = "four_regions",
+  size = "energy"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_point(shape='o', stroke=0.15, color="black")
++ scale_x_continuous(
+        name='Exports (% of GDP)',
+        limits=(0, 240),
+        breaks=list(range(20, 241, 20))
+    )
++ scale_y_continuous(
+        name='Imports (% of GDP)',
+        limits=(-30, 450),
+        breaks=list(range(50, 451, 50)),
+    )
++ scale_size(range=[0.2, 10])
++ coord_fixed(ratio=0.2)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_blank(),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
++ scale_fill_manual(
+    values={
+        "americas": "#5DD43C",
+        "africa": "#27C8EB",
+        "europe": "#FFE032",
+        "asia": "#F25C6E"
+        }
+    )
+)
+```
+
+4. Alternative plot, a plot that shows the trade imbalance for each country by plotting a line with slope of 1 between imports and exports would be useful, but you aren't able to see each country because of how overlapping they are.
+```{python}
+xmid = 120
+ymid = 225
+
+(ggplot(df,
+aes(
+  x = "exports",
+  y = "imports",
+  fill = "four_regions",
+  size = "energy"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_point(shape='o', stroke=0.15, color="black")
++ scale_x_continuous(
+        name='Exports (% of GDP)',
+        limits=(0, 240),
+        breaks=list(range(20, 241, 20))
+    )
++ scale_y_continuous(
+        name='Imports (% of GDP)',
+        limits=(-30, 450),
+        breaks=list(range(50, 451, 50)),
+    )
++ scale_size(range=[0.2, 10])
++ coord_fixed(ratio=0.2)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_blank(),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
++ scale_fill_manual(
+    values={
+        "americas": "#5DD43C",
+        "africa": "#27C8EB",
+        "europe": "#FFE032",
+        "asia": "#F25C6E"
+        }
+    )
++ geom_abline(slope=1, intercept=0, linetype="dashed")
+)
+```
+
+# Task 3
+
+1. The aesthetics being used in this graph are:
+    - Logarithmic y-axis scale
+    - Set x-axis scale
+    - White background with grey gridlines
+    - Minor gridlines at 300, 400, ... 80k, 90k
+    - Points are colored by region
+    - Point size is scaled by income
+    - Large text display of the year in background
+    - X-axis is around twice as long as y-axis is tall
+    - No legend
+
+2. Data downloaded
+
+3. Recreation of the plot:
+```{python}
+df = pd.read_csv("C:/Users/tyler/Downloads/q3data.csv")
+df = df.dropna()
+
+ymin, ymax = 200, 200000
+ymid = np.sqrt(ymin * ymax)
+xmid = 50
+
+major_breaks = [200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+minor_breaks = [300, 400, 600, 700, 800, 900, 3000, 4000, 6000, 7000, 8000, 9000, 30000, 40000, 60000, 70000, 80000, 90000]
+
+(ggplot(df,
+aes(
+  x = "internet_users",
+  y = "gdp",
+  fill = "four_regions",
+  size = "income"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_point(shape='o', stroke=0.15, color="black")
++ scale_fill_manual(
+    values={
+        "americas": "#5DD43C",
+        "africa": "#27C8EB",
+        "europe": "#FFE032",
+        "asia": "#F25C6E"
+        }
+    )
++ scale_y_log10(
+        name='GDP/Capita',
+        limits=(ymin, ymax),
+        breaks=major_breaks,
+        minor_breaks=minor_breaks,
+        labels=["200", "500", "1000", "2000", "5000", "10k", "20k", "50k", "100k"]
+    )
++ scale_x_continuous(
+        name='Individuals using the Internet',
+        limits=(0, 100),
+        breaks=list(range(10, 91, 10)),
+        minor_breaks=[]
+    )
++ scale_size(range=[0.5, 15])
++ coord_fixed(ratio=15)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_line(color="grey", size=0.5, alpha=0.3),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
+)
+```
+
+4. Alternative plot, a bin plot can show a similar level of detail as the point plot, however it loses the details of the income of each country as well as the region of each country.
+```{python}
+(ggplot(df,
+aes(
+  x = "internet_users",
+  y = "gdp"
+))
++ annotate(
+        "text", x=xmid, y=ymid,
+        label=str(df["year"].iloc[0]),
+        size=100,
+        alpha=0.2,
+        color="grey",
+        ha="center", va="center"
+    )
++ geom_bin2d(bins=60)
++ scale_y_log10(
+        name='GDP/Capita',
+        limits=(ymin, ymax),
+        breaks=major_breaks,
+        minor_breaks=minor_breaks,
+        labels=["200", "500", "1000", "2000", "5000", "10k", "20k", "50k", "100k"]
+    )
++ scale_x_continuous(
+        name='Individuals using the Internet',
+        limits=(0, 100),
+        breaks=list(range(10, 91, 10)),
+        minor_breaks=[]
+    )
++ scale_size(range=[0.5, 15])
++ coord_fixed(ratio=15)
++ theme(
+        panel_background=element_rect(fill="white", color="white"),
+        panel_border=element_blank(),
+        plot_background=element_rect(fill="white", color="white"),
+        panel_grid_major=element_line(color="grey", size=0.5, alpha=0.3),
+        panel_grid_minor=element_line(color="grey", size=0.5, alpha=0.3),
+        axis_ticks=element_blank(),
+        axis_title=element_text(size=6),
+        axis_text=element_text(size=5),
+        axis_line=element_line(color="grey", size=0.5, alpha=0.5),
+        legend_position="none"
+    )
+)
+```
