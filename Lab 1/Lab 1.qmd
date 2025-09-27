@@ -1,6 +1,6 @@
 ---
 title: Lab 1
-echo: false
+echo: true
 fig-height: 3.5
 fig-width: 6
 execute:
@@ -12,7 +12,6 @@ format:
 GitHub link: https://github.com/TylerWolfWilliams/GSB-544
 
 ```{python}
-import statsmodels.api as sm
 from plotnine import *
 import pandas as pd
 import numpy as np
