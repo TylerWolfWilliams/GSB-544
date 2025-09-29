@@ -1,0 +1,78 @@
+---
+title: Lab 1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Titanic Wrangling
+
+In this practice activity you'll continue to work with the titanic dataset in ways that flex what you've learned about both data wrangling and data visualization.
+
+# Import the titanic dataset here
+```{python}
+import numpy as np
+import pandas as pd
+from plotnine import ggplot, aes, geom_tile, scale_fill_gradient, theme_minimal
+
+data_dir = "https://dlsun.github.io/pods/data/"
+df_titanic = pd.read_csv(data_dir + "titanic.csv")
+```
+
+## 1. Filter the data to include passengers only. Calculate the joint distribution (cross-tab) between a passenger's class and where they embarked.
+
+# Code here
+```{python}
+df_titanic = df_titanic[(df_titanic["class"] == "1st") | (df_titanic["class"] == "2nd") | (df_titanic["class"] == "3rd")]
+
+pd.crosstab(df_titanic["class"], df_titanic["embarked"])
+```
+
+## 2. Using the joint distribution that calculated above, calculate the following:
+
+* the conditional distribution of their class given where they embarked
+```{python}
+ct = pd.crosstab(df_titanic["class"], df_titanic["embarked"], normalize=True)
+ct
+```
+
+* the conditional distribution of where they embarked given their class
+```{python}
+pd.crosstab(df_titanic["embarked"], df_titanic["class"], normalize=True)
+```
+
+Use the conditional distributions that you calculate to answer the following quesitons:
+
+* What proportion of 3rd class passengers embarked at Southampton?
+```{python}
+ct.loc["3rd", "S"]/np.sum(ct.loc["3rd", :])
+```
+
+* What proportion of Southampton passengers were in 3rd class?
+```{python}
+ct.loc["3rd", "S"]/np.sum(ct.loc[:, "S"])
+```
+
+## 3. Make a visualization showing the distribution of a passenger's class, given where they embarked.
+
+Discuss the pros and cons of using this visualization versus the distributions you calculated before, to answer the previous questions.
+
+```{python}
+heat_df = (ct.reset_index().melt(id_vars="class", var_name="embarked", value_name="value"))
+heat_df
+
+(ggplot(heat_df, aes(x="embarked", y="class", fill="value"))
+    + geom_tile()
+    + scale_fill_gradient(low="white", high="steelblue")
+    + theme_minimal()
+)
+```
+
+This visualization provides a good look at the total distribution, and you are able to see the class/embarked specific distributions.
