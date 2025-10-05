@@ -174,3 +174,61 @@ aes(
     )
 )
 ```
+
+9. Looking at housing data
+
+The plot shows a generally negative relationship between housing market health and avocado prices across the four California metro areas. In cities like Los Angeles and San Diego, higher rates of mortgage delinquency are associated with lower avocado prices, suggesting reduced consumer spending power.
+On the other hand, San Francisco, which maintains low delinquency rates, shows the highest avocado prices.
+Overall, regions with stronger housing markets tend to support higher avocado prices, meaning there could be a connection between ability to buy a house and ability to buy avocado toast.
+```{python}
+mortgage = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Lab 2/nmdb-mortgage-performance-statistics-metros-quarterly.csv")
+
+# Filter for California metros and the house price index indicator
+housing = mortgage.loc[
+    mortgage['GEONAME'].isin([
+        'Los Angeles-Long Beach-Glendale, CA (MSAD)',
+        'San Francisco-San Mateo-Redwood City, CA (MSAD)',
+        'San Diego-Chula Vista-Carlsbad, CA',
+        'Sacramento-Roseville-Folsom, CA'
+    ])].copy()
+
+rename = {
+    'Los Angeles-Long Beach-Glendale, CA (MSAD)': 'los angeles',
+    'San Francisco-San Mateo-Redwood City, CA (MSAD)': 'san francisco',
+    'San Diego-Chula Vista-Carlsbad, CA': 'san diego',
+    'Sacramento-Roseville-Folsom, CA': 'sacramento'
+}
+housing['city'] = housing['GEONAME'].map(rename)
+
+
+# Filter for serious delinquency rate (90+ days past due)
+housing = housing[housing['SERIESID'] == 'P90DL']
+
+# Average by metro and year
+house_agg = housing.groupby(['city','YEAR'], as_index=False)['VALUE1'].mean()
+house_agg = house_agg.rename(columns={'VALUE1':'delinquency_rate', 'YEAR':'year'})
+
+# Merging with df_cali
+df_cali = df_cali.rename(columns={'geography':'city'})
+df_joined = df_cali.groupby(['city','year'], as_index=False)['average_price'].mean()
+merged = pd.merge(df_joined, house_agg, on=['city','year'], how='inner')
+
+(ggplot(merged, 
+aes(
+    x='delinquency_rate', 
+    y='average_price', 
+    color='city'))
++ geom_point(size=3)
++ geom_smooth(method='lm', se=False)
++ labs(
+    title='Avocado Prices x Housing Market Health',
+    x='Serious Mortgage Delinquency Rate',
+    y='Average Avocado Price',
+    color='City'
+    )
++ theme(axis_text_x=element_text(rotation=20, ha='right'))
+)
+```
+
+
+
