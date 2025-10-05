@@ -1,0 +1,176 @@
+---
+title: Lab 2
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+```{python}
+from plotnine import *
+import pandas as pd
+import numpy as np
+```
+
+1. The dataset appears to contain data on the price and volume of avocados tied to a specific geography and date.
+
+2. I am pulling out the cities from the geography column using a list of the most populous cities in the US I found online, which contains city and its associated state, and then filtering to find the "extra" geographies. These I will then manually separate into regions or other levels (Total U.S.). I had to add Boise, Harrisburg, and Roanoke to the Cities dataset manually, and I lastly separated date into day, month, and year columns
+
+```{python}
+df = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Lab 2/avocado-updated-2020.csv")
+cities = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Lab 2/US-Cities.csv")
+
+# Renaming columns for readability
+df.rename(columns={'4046': 'small_volume', '4225': 'large_volume', '4770': 'xlarge_volume'}, inplace=True)
+
+# Cleaning geography column for filtering
+df['geography'] = (df['geography'].str.lower().str.strip().str.split('/').str[0].str.strip())
+
+# Cleaning city and state columns for filtering
+cities['city'] = cities['city'].str.lower().str.strip()
+cities['state'] = cities['state'].str.lower().str.strip()
+
+# Separating out date values
+df['date'] = pd.to_datetime(df['date'], format='%m/%d/%Y')
+df['day'] = df['date'].dt.day
+df['month'] = df['date'].dt.month
+df['year'] = df['date'].dt.year
+
+# Filtering for country, cities, and states in geography column
+df_cities = df.loc[df['geography'].isin(cities['city'])].copy()
+df_states = df.loc[df['geography'].isin(cities['state'])].copy()
+df_country = df.loc[df['geography'] == "total u.s."]
+
+# Filtering for region (all rows not in df_cities, df_states, df_country)
+matched = set(df_cities['geography']).union(set(df_states['geography'])).union(set(df_country['geography']))
+df_region = df.loc[~df['geography'].isin(matched)].copy()
+```
+
+3. I can now sort by year in my df_region table and find the region with the largest small_volume. We can see that West is the region with the largest small_volume in 2017
+```{python}
+# Finding the sum of small_volume for each region across 2017
+mask = (df_region['year'] == 2017) & (df_region['type'] == 'organic')
+region_totals = df_region.loc[mask].groupby('geography', as_index=False)['small_volume'].sum()
+region_totals.loc[region_totals['small_volume'].idxmax()]
+```
+
+4. I can also use the previously created month column to find the month with highest total volume. We can see that May has the highest total_volume.
+```{python}
+# Finding the sum of total_volume for each month
+monthly_totals = df.groupby('month', as_index=False)['total_volume'].sum().astype(int)
+monthly_totals.loc[monthly_totals['total_volume'].idxmax()]
+```
+
+5. I found the mean of total_volume for each city, and then filtered for the top 5. We can see in the plot that LA has the highest average.
+```{python}
+# Finding the sum of total_volume for each region
+top5 = df_cities.groupby('geography', as_index=False)['total_volume'].mean().sort_values('total_volume', ascending=False).head(5)
+
+df_top5 = df_cities[df_cities['geography'].isin(top5['geography'])].copy()
+
+(ggplot(df_top5, 
+aes(
+    x='geography', 
+    y='total_volume', 
+    fill='geography'
+))
++ geom_boxplot(show_legend=False)
++ labs(
+    title='Top 5 Metro Areas',
+    x='Metro Area',
+    y='Total Volume'
+    )
++ theme(
+    axis_text_x=element_text(rotation=45, ha='right', size=10),
+    figure_size=(10, 6)
+    )
+)
+```
+
+6. Creating the california subset
+```{python}
+df_cali = df.loc[df['geography'].isin({"los angeles", "sacramento", "san francisco", "san diego"})].copy()
+```
+
+7. I gathered the summary statistics of the average_price in each of the 4 california regions. I then calculated price difference and plotted the regions by it.
+```{python}
+# Gathering summary statistics
+summary = df_cali.groupby(['geography', 'type'])['average_price'].agg(['mean', 'median', 'std', 'count']).reset_index()
+print(summary)
+
+price_diff = summary.pivot(index='geography', columns='type', values='mean')
+price_diff['diff'] = price_diff['organic'] - price_diff['conventional']
+price_diff = price_diff.sort_values('diff', ascending=False)
+print(price_diff)
+
+price_diff = price_diff.reset_index()
+
+(ggplot(price_diff, 
+aes(
+    x='geography', 
+    y='diff', 
+    fill='geography'
+))
++ geom_col(show_legend=False)
++ labs(
+    title='Average Price Difference',
+    x='Region',
+    y='Price Difference'
+    )
++ theme(
+    axis_text_x=element_text(rotation=45, ha='right', size=10),
+    figure_size=(8, 5)
+    )
+)
+```
+
+8. 
+```{python}
+# Creating a single size column
+df_cali['size'] = df_cali[['small_volume', 'large_volume', 'xlarge_volume']].idxmax(axis=1)
+
+df_melt = df_cali.melt(
+    id_vars=['geography', 'type'],
+    value_vars=['small_volume', 'large_volume', 'xlarge_volume'],
+    var_name='size',
+    value_name='volume'
+)
+
+# Removing _volume from size names
+df_melt['size'] = df_melt['size'].str.replace('_volume', '').str.title()
+
+# Compute total and proportions within each geography and type
+df_prop = df_melt.groupby(['geography', 'type', 'size'], as_index=False)['volume'].mean()
+df_prop['proportion'] = df_prop.groupby(['geography', 'type'])['volume'].apply(lambda x: x / x.sum()).reset_index(drop=True)
+
+# Manually defining order of size
+df_prop['size'] = pd.Categorical(df_prop['size'], categories=['Xlarge', 'Large', 'Small'], ordered=True)
+
+(ggplot(df_prop, 
+aes(
+    x='geography', 
+    y='proportion', 
+    fill='size'
+))
++ geom_bar(stat='identity', position='stack')
++ facet_wrap('~type')
++ scale_y_continuous(
+    breaks=[0, 0.25, 0.50, 0.75, 1.00],
+    labels=["0%", "25%", "50%", "75%", "100%"]
+    )
++ labs(
+    title='Proportion of Average Hass Avocado Sales by Size',
+    x='Region of California',
+    y='Proportion'
+    )
++ theme(
+    axis_text_x=element_text(rotation=45, ha='right', size=10),
+    figure_size=(10, 6)
+    )
+)
+```

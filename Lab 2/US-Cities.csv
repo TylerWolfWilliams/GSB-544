@@ -1,0 +1,355 @@
+city,state
+New York City,New York
+Los Angeles,California
+Chicago,Illinois
+Houston,Texas
+Phoenix,Arizona
+San Antonio,Texas
+Philadelphia,Pennsylvania
+San Diego,California
+Dallas,Texas
+Fort Worth,Texas
+Jacksonville,Florida
+Austin,Texas
+San Jose,California
+Charlotte,North Carolina
+Columbus,Ohio
+Indianapolis,Indiana
+San Francisco,California
+Seattle,Washington
+Oklahoma City,Oklahoma
+Denver,Colorado
+Nashville,Tennessee
+Washington,District of Columbia
+El Paso,Texas
+Las Vegas,Nevada
+Boston,Massachusetts
+Detroit,Michigan
+Louisville,Kentucky
+Portland,Oregon
+Memphis,Tennessee
+Albuquerque,New Mexico
+Baltimore,Maryland
+Milwaukee,Wisconsin
+Tucson,Arizona
+Fresno,California
+Sacramento,California
+Atlanta,Georgia
+Mesa,Arizona
+Kansas City,Missouri
+Colorado Springs,Colorado
+Raleigh,North Carolina
+Omaha,Nebraska
+Miami,Florida
+Virginia Beach,Virginia
+Long Beach,California
+Oakland,California
+Minneapolis,Minnesota
+Bakersfield,California
+Tampa,Florida
+Tulsa,Oklahoma
+Arlington,Texas
+Aurora,Colorado
+Wichita,Kansas
+Cleveland,Ohio
+New Orleans,Louisiana
+Henderson,Nevada
+Honolulu,Hawaii
+Anaheim,California
+Orlando,Florida
+Riverside,California
+Irvine,California
+Stockton,California
+Lexington,Kentucky
+Corpus Christi,Texas
+Cincinnati,Ohio
+Santa Ana,California
+Greensboro,North Carolina
+Durham,North Carolina
+Pittsburgh,Pennsylvania
+Newark,New Jersey
+North Las Vegas,Nevada
+St. Paul,Minnesota
+Lincoln,Nebraska
+Plano,Texas
+Jersey City,New Jersey
+Madison,Wisconsin
+Anchorage,Alaska
+Chandler,Arizona
+Reno,Nevada
+Gilbert,Arizona
+Fort Wayne,Indiana
+Chula Vista,California
+Lubbock,Texas
+Buffalo,New York
+Port St. Lucie,Florida
+St. Louis,Missouri
+St. Petersburg,Florida
+Toledo,Ohio
+Laredo,Texas
+Glendale,Arizona
+Chesapeake,Virginia
+Winston-Salem,North Carolina
+Enterprise,Nevada
+Irving,Texas
+Scottsdale,Arizona
+Cape Coral,Florida
+Arlington,Virginia
+Garland,Texas
+Frisco,Texas
+Boise City,Idaho
+Huntsville,Alabama
+Richmond,Virginia
+Spring Valley,Nevada
+Spokane,Washington
+Norfolk,Virginia
+Tacoma,Washington
+San Bernardino,California
+McKinney,Texas
+Fremont,California
+Hialeah,Florida
+Fontana,California
+Modesto,California
+Santa Clarita,California
+Salt Lake City,Utah
+Baton Rouge,Louisiana
+Sioux Falls,South Dakota
+Moreno Valley,California
+Fayetteville,North Carolina
+Worcester,Massachusetts
+Des Moines,Iowa
+Grand Prairie,Texas
+Yonkers,New York
+Tallahassee,Florida
+Rochester,New York
+Little Rock,Arkansas
+Amarillo,Texas
+Peoria,Arizona
+Knoxville,Tennessee
+Sunrise Manor,Nevada
+Augusta,Georgia
+Vancouver,Washington
+Columbus,Georgia
+Overland Park,Kansas
+Oxnard,California
+Grand Rapids,Michigan
+Birmingham,Alabama
+Tempe,Arizona
+Brownsville,Texas
+Montgomery,Alabama
+Providence,Rhode Island
+Chattanooga,Tennessee
+Clarksville,Tennessee
+Huntington Beach,California
+Akron,Ohio
+Ontario,California
+Fort Lauderdale,Florida
+Cary,North Carolina
+Paradise,Nevada
+Newport News,Virginia
+Glendale,California
+Mobile,Alabama
+Elk Grove,California
+Salem,Oregon
+Eugene,Oregon
+Aurora,Illinois
+Santa Rosa,California
+Rancho Cucamonga,California
+Murfreesboro,Tennessee
+Shreveport,Louisiana
+Pembroke Pines,Florida
+Springfield,Missouri
+Fort Collins,Colorado
+Denton,Texas
+Surprise,Arizona
+Oceanside,California
+Roseville,California
+Garden Grove,California
+Killeen,Texas
+Corona,California
+Lancaster,California
+Charleston,South Carolina
+Salinas,California
+Palmdale,California
+Macon-Bibb County,Georgia
+Lakewood,Colorado
+Hollywood,Florida
+Paterson,New Jersey
+Alexandria,Virginia
+Springfield,Massachusetts
+Bellevue,Washington
+Olathe,Kansas
+Hayward,California
+Naperville,Illinois
+Kansas City,Kansas
+Joliet,Illinois
+Sunnyvale,California
+McAllen,Texas
+Bridgeport,Connecticut
+Gainesville,Florida
+Savannah,Georgia
+Waco,Texas
+Visalia,California
+Thornton,Colorado
+Columbia,South Carolina
+Escondido,California
+Palm Bay,Florida
+Mesquite,Texas
+Meridian,Idaho
+Syracuse,New York
+Rockford,Illinois
+Pasadena,Texas
+Midland,Texas
+Pomona,California
+Victorville,California
+Miramar,Florida
+Metairie,Louisiana
+New Haven,Connecticut
+Lewisville,Texas
+Fargo,North Dakota
+Orange,California
+Jackson,Mississippi
+Round Rock,Texas
+Hampton,Virginia
+Stamford,Connecticut
+Fullerton,California
+Coral Springs,Florida
+Elizabeth,New Jersey
+Warren,Michigan
+Cedar Rapids,Iowa
+Torrance,California
+Dayton,Ohio
+Lehigh Acres,Florida
+Sterling Heights,Michigan
+Santa Clara,California
+Carrollton,Texas
+Abilene,Texas
+Columbia,Missouri
+Norman,Oklahoma
+Kent,Washington
+West Valley City,Utah
+Pasadena,California
+Athens,Georgia
+Clovis,California
+Pearland,Texas
+West Palm Beach,Florida
+College Station,Texas
+Lakeland,Florida
+Wilmington,North Carolina
+North Charleston,South Carolina
+Topeka,Kansas
+The Woodlands,Texas
+Allentown,Pennsylvania
+Simi Valley,California
+New Braunfels,Texas
+Billings,Montana
+Rochester,Minnesota
+Nampa,Idaho
+Broken Arrow,Oklahoma
+Lafayette,Louisiana
+Spring Hill,Florida
+Fairfield,California
+Thousand Oaks,California
+Goodyear,Arizona
+Vallejo,California
+Concord,California
+Menifee,California
+Independence,Missouri
+Hartford,Connecticut
+Conroe,Texas
+Arvada,Colorado
+Buckeye,Arizona
+High Point,North Carolina
+Antioch,California
+Cambridge,Massachusetts
+Brandon,Florida
+League City,Texas
+Las Cruces,New Mexico
+Ann Arbor,Michigan
+Clearwater,Florida
+Odessa,Texas
+Richardson,Texas
+Tuscaloosa,Alabama
+Waterbury,Connecticut
+Allen,Texas
+Berkeley,California
+Manchester,New Hampshire
+East Los Angeles,California
+Greeley,Colorado
+Rio Rancho,New Mexico
+Pompano Beach,Florida
+Georgetown,Texas
+Evansville,Indiana
+Westminster,Colorado
+Concord,North Carolina
+Lowell,Massachusetts
+West Jordan,Utah
+Tyler,Texas
+South Fulton,Georgia
+Richmond,California
+Carlsbad,California
+Elgin,Illinois
+Murrieta,California
+Provo,Utah
+Lansing,Michigan
+Springfield,Illinois
+Everett,Washington
+Spokane Valley,Washington
+Sparks,Nevada
+Temecula,California
+Pueblo,Colorado
+Beaumont,Texas
+Palm Coast,Florida
+Riverview,Florida
+St. George,Utah
+Miami Gardens,Florida
+Santa Maria,California
+Edinburg,Texas
+Davie,Florida
+Peoria,Illinois
+Jurupa Valley,California
+Columbia,Maryland
+Hillsboro,Oregon
+Gresham,Oregon
+San Buenaventura (Ventura),California
+Bend,Oregon
+Fishers,Indiana
+Sugar Land,Texas
+Fayetteville,Arkansas
+San Tan Valley,Arizona
+Costa Mesa,California
+Centennial,Colorado
+Lee's Summit,Missouri
+Downey,California
+Green Bay,Wisconsin
+Suffolk,Virginia
+Brockton,Massachusetts
+Boulder,Colorado
+Sandy Springs,Georgia
+Fort Myers,Florida
+Carmel,Indiana
+South Bend,Indiana
+Dearborn,Michigan
+West Covina,California
+Yuma,Arizona
+Renton,Washington
+Rialto,California
+Albany,New York
+Wichita Falls,Texas
+Vacaville,California
+Highlands Ranch,Colorado
+Deltona,Florida
+Quincy,Massachusetts
+Lynn,Massachusetts
+Boca Raton,Florida
+Hesperia,California
+Tracy,California
+El Cajon,California
+New Bedford,Massachusetts
+Edmond,Oklahoma
+Chico,California
+El Monte,California
+Temple,Texas
+Boise,Idaho
+Harrisburg,Pennsylvania
+Roanoke,Virginia
