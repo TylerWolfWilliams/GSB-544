@@ -1,0 +1,212 @@
+---
+title: Lab 3
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Importing libraries and xmas
+```{python}
+import pandas as pd
+from sys import exit
+import numpy as np
+xmas = pd.read_csv("https://www.dropbox.com/scl/fi/qxaslqqp5p08i1650rpc4/xmas.csv?rlkey=erdxi7jbh7pqf9fh4lv4cayp5&dl=1")
+
+xmas.head(12)
+```
+
+# Pluralize Functions
+```{python}
+def pluralize_gift(gift):
+    """
+    Pluralizes almost any word, there are presumably a few uncommon exceptions not accounted for
+    
+    Parameters
+    ----------
+    gift: str or pd.Series
+        A noun
+        
+    Return
+    ------
+    plural: str or pd.Series
+        Plural version
+    """
+
+    if isinstance(gift, str):
+        return pluralize_word(gift)
+    elif isinstance(gift, pd.Series):
+        return gift.apply(pluralize_word)
+    else:
+        exit("Please input either a str object or pd.Series object as gift")
+
+
+def pluralize_word(word):
+    """
+    Pluralizes almost any word, there are presumably a few uncommon exceptions not accounted for
+    
+    Parameters
+    ----------
+    gift: str
+        A noun
+        
+    Return
+    ------
+    plural: str
+        Plural version
+    """
+    
+    lower_word = word.lower()
+
+    if lower_word.find("oo") > 0:
+        plural = word.replace("oo", "ee")
+    elif lower_word.endswith("y"):
+        plural = word.replace("y", "ies")
+    else:
+        plural = word + "s"
+    return plural
+
+```
+
+# Pluralize Tests
+```{python}
+# Should work
+print(pluralize_gift("goose"))
+
+# Will work if your function is vectorized! 
+print(pluralize_gift(xmas['Gift.Item']))
+```
+
+# fillNa Function
+```{python}
+def fillNa(word):
+    if pd.isna(word):
+        return ""
+    return word
+```
+
+# make_phrase Function
+```{python}
+num_to_word = {
+    1: "One", 2: "Two", 3: "Three", 4: "Four",
+    5: "Five", 6: "Six", 7: "Seven", 8: "Eight",
+    9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve"
+}
+
+def make_phrase(num, item, verb, adjective, location):
+    """
+    <documentation here>
+    """
+
+    # Make adj, vb, and loc "" if NaN
+    adj = fillNa(adjective)
+    vb  = fillNa(verb)
+    loc = fillNa(location)
+
+    parts = []
+
+    # Checking if num_to_word needs to be changed to A/An
+    if num != 1:
+        parts.append(num_to_word[num])
+        # Making sure adj is before item
+        if adj:
+            parts.append(adj)
+        parts.append(pluralize_word(item))
+    else:
+        head = adj if adj else item
+        article = "An" if head and head[0].lower() in "aeiou" else "A"
+        parts.append(article)
+        if adj:
+            parts.append(adj)
+        parts.append(item)
+
+    # Adding vb and loc to the end of the phrase
+    for p in (vb, loc):
+        if p:
+            parts.append(p)
+
+    # Making sure all parts are separated but theres no trailing spaces
+    return " ".join(parts)
+```
+
+# Testing make_phrase
+```{python}
+make_phrase(num = 10, 
+            item = "lord", 
+            verb = "a-leaping", 
+            adjective = None, 
+            location = None)
+```
+
+# Creating Full.Phrase
+```{python}
+xmas["Full.Phrase"] = xmas.apply(
+    lambda row: make_phrase(
+        num=row["Day"],
+        item=row["Gift.Item"],
+        verb=row["Verb"],
+        adjective=row["Adjective"],
+        location=row["Location"]
+    ),
+    axis=1
+)
+xmas.head(12)
+```
+
+# sing_day Function
+```{python}
+def sing_day(dataset, num, phrase_col):
+    """
+    <documentation>
+    """
+    
+    num_word = dataset['Day.in.Words'].iloc[num - 1]
+    intro = f"On the {num_word} day of Christmas, my true love sent to me:\n"
+
+    # If num == 1, just return the first phrase
+    if num == 1:
+        return intro + dataset[phrase_col].iloc[0] + "."
+
+    lines = []
+
+    # Lines 3+, end in "," only
+    for i in range(num - 1, 1, -1):
+        lines.append(dataset[phrase_col].iloc[i] + ",")
+
+    # Second to last line, doesn't run if num == 1, ends in ", and" rather than ","
+    lines.append(dataset[phrase_col].iloc[1] + ", and")
+
+    # Final line, period at end
+    lines.append(dataset[phrase_col].iloc[0] + ".")
+
+    return intro + "\n".join(lines)
+```
+
+# Test Song
+```{python}
+print(sing_day(xmas, 3, "Full.Phrase"))
+```
+
+# Final Song
+```{python}
+xmas2 = pd.read_csv("https://www.dropbox.com/scl/fi/p9x9k8xwuzs9rhp582vfy/xmas_2.csv?rlkey=kvc3j3lmyn4opcidsrhcmrof1&dl=1")
+
+xmas2["Full.Phrase"] = xmas2.apply(
+    lambda row: make_phrase(
+        num=row["Day"],
+        item=row["Gift.Item"],
+        verb=row["Verb"],
+        adjective=row["Adjective"],
+        location=row["Location"]
+    ),
+    axis=1
+)
+
+print(sing_day(xmas2, 12, "Full.Phrase"))
+```
