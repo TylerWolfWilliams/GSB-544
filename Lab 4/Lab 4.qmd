@@ -1,0 +1,230 @@
+---
+title: Lab 3
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Web Scraping Imports
+```{python}
+import re
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+BASE_URL = "https://tastesbetterfromscratch.com/meal-plan-{}"
+ua_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+req = requests.Session()
+
+TASTY_URL = "https://tasty.p.rapidapi.com/recipes/list"
+tasty_headers = {
+    "X-RapidAPI-Key": "22dca02f01msh9c13ec29d696e3ep14dd33jsn0e0bd6e496e7",
+    "X-RapidAPI-Host": "tasty.p.rapidapi.com",
+}
+```
+
+# Clean Query Helper Method
+```{python}
+def _clean_query(name: str) -> str:
+    """
+    Light text cleanup so Tasty search is more likely to match.
+    """
+    # remove content in parentheses/brackets
+    name = re.sub(r"[\(\[\{].*?[\)\]\}]", " ", name)
+    # keep letters/numbers/space and collapse whitespace
+    name = re.sub(r"[^A-Za-z0-9\s]", " ", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+```
+
+# Vegetarian Check Helper Method
+```{python}
+def is_vegetarian(recipe_name: str) -> bool:
+    """
+    Simple check for common meat words.
+    """
+    meat_words = [
+        "beef","steak","pork","bacon","ham","sausage","chicken","turkey","fish","shrimp"
+    ]
+    pattern = r"\b(" + "|".join(re.escape(w) for w in meat_words) + r")\b"
+    return re.search(pattern, recipe_name, flags=re.IGNORECASE) is None
+```
+
+# Pull Weekly Plan Recipies
+```{python}
+def get_weekly_plan(plan_number: int) -> pd.DataFrame:
+    """
+    Scrape the weekly meal plan into Day, Name, Link, Price.
+    """
+    url = BASE_URL.format(plan_number)
+    html = req.get(url, headers=ua_headers)
+    soup = BeautifulSoup(html.content, "html.parser")
+
+    rows = []
+    for p in soup.select("p.has-text-align-left"):
+        day_tag = p.find("strong")
+        a_tag = p.find("a", href=True)
+
+        if not day_tag or not a_tag:
+            continue
+
+        day = day_tag.get_text(strip=True).replace(":", "")
+        name = a_tag.get_text(strip=True)
+        link = a_tag["href"]
+
+        price = ""
+        if a_tag.next_sibling:
+            price = str(a_tag.next_sibling).strip()
+
+        rows.append([day, name, link, price])
+
+    df = pd.DataFrame(rows, columns=["Day", "Name", "Link", "Price"])
+
+    df["Vegetarian"] = df["Name"].apply(is_vegetarian)
+    return df
+```
+
+# Match Meal Plan Recipe To Tasty Recipies
+```{python}
+def match_recipe(query: str, max_results: int = 100) -> pd.DataFrame:
+    q = _clean_query(query)
+    if not q:
+        return pd.DataFrame(columns=[
+            "TastyId", "TastyName", "TastyUrl",
+            "Calories", "Fat", "Carbs", "Protein"
+        ])
+
+    params = {"from": "0", "size": str(min(max_results, 100)), "q": q}
+    r = requests.get(TASTY_URL, headers=tasty_headers, params=params)
+    data = r.json()
+
+    results = data.get("results", []) or []
+    rows = []
+    for item in results:
+        tid = item.get("id")
+        tname = item.get("name") or ""
+        slug = item.get("slug") or ""
+        turl = f"https://tasty.co/recipe/{slug}" if slug else ""
+
+        nut = item.get("nutrition") or {}
+        cal = nut.get("calories")
+        fat = nut.get("fat")
+        carbs = nut.get("carbohydrates")
+        protein = nut.get("protein")
+
+        rows.append([tid, tname, turl, cal, fat, carbs, protein])
+
+    return pd.DataFrame(rows, columns=[
+        "TastyId", "TastyName", "TastyUrl", "Calories", "Fat", "Carbs", "Protein"
+    ])
+```
+
+# Compile Everything
+```{python}
+def get_mealplan_data(plan_number: int) -> pd.DataFrame:
+    """
+    1) Scrape the weekly plan.
+    2) For each recipe, query Tasty for matches.
+    3) Return a single combined dataset: one row per Tasty match,
+       with the meal-plan info duplicated. If no matches, keep a blank row.
+    """
+    plan_df = get_weekly_plan(plan_number)
+
+    all_rows = []
+    for index, row in plan_df.iterrows():
+        day = row["Day"]
+        name = row["Name"]
+        link = row["Link"]
+        price = row["Price"]
+        veg = row["Vegetarian"]
+
+        matches = match_recipe(name, max_results=100)
+
+        if matches.empty:
+            all_rows.append({
+                "Day": day,
+                "Name": name,
+                "Link": link,
+                "Price": price,
+                "Vegetarian": veg,
+                "TastyId": None,
+                "TastyName": None,
+                "TastyUrl": None,
+                "Calories": None,
+                "Fat": None,
+                "Carbs": None,
+                "Protein": None
+            })
+        else:
+            for _, m in matches.iterrows():
+                all_rows.append({
+                    "Day": day,
+                    "Name": name,
+                    "Link": link,
+                    "Price": price,
+                    "Vegetarian": veg,
+                    "TastyId": m["TastyId"],
+                    "TastyName": m["TastyName"],
+                    "TastyUrl": m["TastyUrl"],
+                    "Calories": m["Calories"],
+                    "Fat": m["Fat"],
+                    "Carbs": m["Carbs"],
+                    "Protein": m["Protein"]
+                })
+
+    return pd.DataFrame(all_rows, columns=[
+        "Day","Name","Link","Price","Vegetarian","TastyId","TastyName","TastyUrl", "Calories", "Fat", "Carbs", "Protein"
+    ])
+```
+
+```{python}
+df = get_mealplan_data(202)
+df
+```
+
+```{python}
+import matplotlib.pyplot as plt
+
+# Aggregate by day (mean nutrition values)
+nutrition_cols = ["Calories", "Fat", "Carbs", "Protein"]
+agg = df.groupby("Day")[nutrition_cols + ["Vegetarian"]].mean().reset_index()
+
+# Sort the days roughly in order (since they’re text)
+order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+agg["Day"] = pd.Categorical(agg["Day"], categories=order, ordered=True)
+agg = agg.sort_values("Day")
+
+# Plot calories over the week
+plt.figure(figsize=(10,6))
+colors = ["green" if v else "red" for v in agg["Vegetarian"]]
+plt.bar(agg["Day"], agg["Calories"], color=colors)
+plt.title("Average Calories per Day - Meal Plan 202")
+plt.ylabel("Calories")
+plt.xlabel("Day of the Week")
+plt.xticks(rotation=30)
+plt.legend(handles=[
+    plt.Line2D([0], [0], color="green", lw=6, label="Vegetarian"),
+    plt.Line2D([0], [0], color="red", lw=6, label="Non-Vegetarian")
+])
+plt.show()
+```
+
+```{python}
+plt.figure(figsize=(10,6))
+for col in ["Fat", "Carbs", "Protein"]:
+    plt.plot(agg["Day"], agg[col], marker="o", label=col)
+
+plt.title("Macronutrient Trends Across the Week - Meal Plan 202")
+plt.xlabel("Day of the Week")
+plt.ylabel("Grams")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
