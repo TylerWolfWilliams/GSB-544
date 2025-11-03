@@ -2203,7 +2203,7 @@ vertical-align: -.125em;
 <p>GitHub link: https://github.com/TylerWolfWilliams/GSB-544</p>
 <section id="importing-libraries-and-xmas" class="level1">
 <h1>Importing libraries and xmas</h1>
-<div id="b0f0997b" class="cell" data-execution_count="1">
+<div id="fde94557" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -2292,7 +2292,7 @@ vertical-align: -.125em;
 </section>
 <section id="encoding-categorical-variables" class="level1">
 <h1>Encoding categorical variables</h1>
-<div id="0015a7cb" class="cell" data-execution_count="2">
+<div id="ccb70034" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.get_dummies(df, columns<span class="op">=</span>[<span class="st">&#39;sex&#39;</span>, <span class="st">&#39;smoker&#39;</span>, <span class="st">&#39;region&#39;</span>], drop_first<span class="op">=</span><span class="va">True</span>)</span>
@@ -2382,7 +2382,7 @@ vertical-align: -.125em;
 </section>
 <section id="histogram-visualizing-the-distribution-of-charges" class="level1">
 <h1>Histogram visualizing the distribution of ‘charges’</h1>
-<div id="7fb72307" class="cell" data-execution_count="3">
+<div id="91e56cb0" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>(</span>
@@ -2403,7 +2403,7 @@ vertical-align: -.125em;
 <section id="box-plot-of-charges-x-smoker" class="level1">
 <h1>Box plot of charges x smoker</h1>
 <p>Smoking clearly has a large effect on charges with the average charge rising by around ~30k for smokers vs non-smokers.</p>
-<div id="1e43ceab" class="cell" data-execution_count="4">
+<div id="bd047684" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(</span>
@@ -2424,7 +2424,7 @@ vertical-align: -.125em;
 <section id="box-plot-of-charges-x-sex" class="level1">
 <h1>Box plot of charges x sex</h1>
 <p>Sex appears to have a much smaller effect on charges with almost identical means and only slightly more variation in the charges given to males vs females.</p>
-<div id="33ff344b" class="cell" data-execution_count="5">
+<div id="73b6c88c" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>(</span>
@@ -2445,7 +2445,7 @@ vertical-align: -.125em;
 <section id="box-plot-of-charges-x-bmi" class="level1">
 <h1>Box plot of charges x bmi</h1>
 <p>There is a clear upward trend in charges as bmi rises however it is worth noting that the majority of charges, regardless of bmi, are centered around 0-15k with the upward trend beginning after crossing the 15k barrier.</p>
-<div id="1e85c910" class="cell" data-execution_count="6">
+<div id="29b6c1d8" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>(</span>
@@ -2466,7 +2466,7 @@ vertical-align: -.125em;
 <section id="age-linear-model" class="level1">
 <h1>Age linear model</h1>
 <p>This model is clearly not a good fit with an r^2 score of 0.139 and high MSE and MAE scores. This model would predict that an increase in 1 year of age would increase the charge by $211.7</p>
-<div id="c74edb13" class="cell" data-execution_count="7">
+<div id="9aeb18f5" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2498,7 +2498,7 @@ Coefficients: [211.69155768]</code></pre>
 <section id="age-sex-linear-model" class="level1">
 <h1>Age, Sex linear model</h1>
 <p>This model is also clearly not a good fit with an r^2 score of 0.125 and high MSE and MAE scores. This model would predict that an increase in 1 year of age would increase the charge by $209.3 and a patient being male would increase the charge by $1473.5 compared to being female.</p>
-<div id="5998bf20" class="cell" data-execution_count="8">
+<div id="6ad97759" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2528,7 +2528,7 @@ Coefficients: [ 209.29665278 1473.52604363]</code></pre>
 <section id="age-smoker-linear-model" class="level1">
 <h1>Age, Smoker linear model</h1>
 <p>This model is a significantly better fit with an r^2 score of 0.807 and significantly lower MSE and MAE scores than the previous models. This model would predict charges increase by $247.9 given an increase of 1 year of age and an increase of $23783.2 for a smoker vs a non-smoker.</p>
-<div id="2579dd50" class="cell" data-execution_count="9">
+<div id="d594f026" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2562,7 +2562,7 @@ Coefficients: [  247.96864143 23783.23782356]</code></pre>
 <section id="age-bmi-linear-model" class="level1">
 <h1>Age, BMI linear model</h1>
 <p>This model is slightly better than the original age lr model, however the slightly higher r^2 value and sightly lower MSE may be a result of the test/training split and could possibly switch which model scores better given a different split.</p>
-<div id="19f10d2d" class="cell" data-execution_count="10">
+<div id="ac2e3c16" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2592,7 +2592,7 @@ Coefficients: [199.60006815 270.53353676]</code></pre>
 <section id="age2-bmi-linear-model" class="level1">
 <h1>Age^2, BMI linear model</h1>
 <p>This model is almost identical to the previous age, BMI model with almost no variation in r^2 and MSE scores.</p>
-<div id="a49b77ce" class="cell" data-execution_count="11">
+<div id="425ed9d1" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">&#39;age2&#39;</span>] <span class="op">=</span> df[<span class="st">&#39;age&#39;</span>]<span class="op">**</span><span class="dv">2</span></span>
@@ -2623,7 +2623,7 @@ Coefficients: [331.21660473  -1.6527677  274.52595778]</code></pre>
 <section id="age-bmi-multiple-linear-model-age-degree-4" class="level1">
 <h1>Age, BMI multiple linear model (Age degree 4)</h1>
 <p>This model, while still not great, is definitely better than the original with an r^2 of 0.18 vs 0.139 and an MSE of 1.16e8 vs 1.22e8</p>
-<div id="8c75bb0a" class="cell" data-execution_count="12">
+<div id="14a807b1" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2660,7 +2660,7 @@ R^2: 0.1801358993908947</code></pre>
 <section id="age-bmi-multiple-linear-model-age-degree-12" class="level1">
 <h1>Age, BMI multiple linear model (Age degree 12)</h1>
 <p>This model is clearly overfit with an r^2 of 0.136 and an MSE of 1.22e8, almost identical scores from the original model</p>
-<div id="e751d004" class="cell" data-execution_count="13">
+<div id="829769d2" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">&#39;charges&#39;</span>]</span>
@@ -2697,7 +2697,7 @@ R^2: 0.13607109345777035</code></pre>
 <section id="results-1" class="level1">
 <h1>Results</h1>
 <p>The 4th degree model is clearly the best model with the highest r^2 vaule and lowest MSE which I agree with as the model does not appear to be over/underfit. # 12th Degree predictions plot</p>
-<div id="f8973a36" class="cell" data-execution_count="14">
+<div id="4c52b0ec" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> pd.DataFrame({</span>
@@ -2724,7 +2724,7 @@ R^2: 0.13607109345777035</code></pre>
 </section>
 <section id="new-data" class="level1">
 <h1>New Data</h1>
-<div id="680a2d1c" class="cell" data-execution_count="15">
+<div id="11964af7" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>df_old <span class="op">=</span> df</span>
@@ -2817,7 +2817,7 @@ R^2: 0.13607109345777035</code></pre>
 <section id="new-data-models" class="level1">
 <h1>New Data Models</h1>
 <p>The final model (~ (age + bmi)*smoker) appears to be the best with the lowest MSE value.</p>
-<div id="f18f9b82" class="cell" data-execution_count="16">
+<div id="d082c398" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>df_old[<span class="st">&#39;age_smoker&#39;</span>] <span class="op">=</span> df_old[<span class="st">&#39;age&#39;</span>] <span class="op">*</span> df_old[<span class="st">&#39;smoker_yes&#39;</span>]</span>
@@ -2886,7 +2886,7 @@ R^2: 0.13607109345777035</code></pre>
 </section>
 <section id="plotting-residuals" class="level1">
 <h1>Plotting residuals</h1>
-<div id="0c0df8ba" class="cell" data-execution_count="17">
+<div id="b590845b" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> pd.DataFrame({</span>
@@ -2914,7 +2914,7 @@ R^2: 0.13607109345777035</code></pre>
 </section>
 <section id="best-model" class="level1">
 <h1>Best model</h1>
-<div id="ed7210f0" class="cell" data-execution_count="18">
+<div id="5164ae73" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>df_old[<span class="st">&#39;age^2&#39;</span>] <span class="op">=</span> df_old[<span class="st">&#39;age&#39;</span>]<span class="op">**</span><span class="dv">2</span></span>
@@ -2940,7 +2940,7 @@ R^2: 0.8611363912486582</code></pre>
 </section>
 <section id="plotting-residuals-1" class="level1">
 <h1>Plotting residuals</h1>
-<div id="2102ef91" class="cell" data-execution_count="19">
+<div id="0efb73a5" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> pd.DataFrame({</span>
