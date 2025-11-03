@@ -1,0 +1,376 @@
+---
+title: Lab 5
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Importing libraries and xmas
+```{python}
+import pandas as pd
+import numpy as np
+from plotnine import *
+import sklearn
+from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+
+df = pd.read_csv("https://www.dropbox.com/s/bocjjyo1ehr5auz/insurance_costs_1.csv?dl=1")
+
+df.head()
+```
+
+# Encoding categorical variables
+```{python}
+df = pd.get_dummies(df, columns=['sex', 'smoker', 'region'], drop_first=True)
+
+df.head()
+```
+
+# Histogram visualizing the distribution of 'charges'
+```{python}
+(
+    ggplot(df, aes(x="charges")) 
+    + geom_histogram(bins=30, fill="steelblue", color="white") 
+    + theme_minimal()
+)
+```
+
+# Box plot of charges x smoker
+Smoking clearly has a large effect on charges with the average charge rising by around ~30k for smokers vs non-smokers.
+```{python}
+(
+    ggplot(df, aes(x='smoker_yes', y='charges', fill='smoker_yes'))
+    + geom_boxplot(show_legend=True)
+    + theme_minimal()
+)
+```
+
+# Box plot of charges x sex
+Sex appears to have a much smaller effect on charges with almost identical means and only slightly more variation in the charges given to males vs females.
+```{python}
+(
+    ggplot(df, aes(x='sex_male', y='charges', fill='sex_male'))
+    + geom_boxplot(show_legend=True)
+    + theme_minimal()
+)
+```
+
+# Box plot of charges x bmi
+There is a clear upward trend in charges as bmi rises however it is worth noting that the majority of charges, regardless of bmi, are centered around 0-15k with the upward trend beginning after crossing the 15k barrier.
+```{python}
+(
+    ggplot(df, aes(x='bmi', y='charges'))
+    + geom_point(show_legend=True)
+    + theme_minimal()
+)
+```
+
+# Age linear model
+This model is clearly not a good fit with an r^2 score of 0.139 and high MSE and MAE scores. This model would predict that an increase in 1 year of age would increase the charge by $211.7
+```{python}
+y = df['charges']
+X = df[['age']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+lr = LinearRegression()
+
+lr_fitted_a = lr.fit(X_train, y_train)
+y_pred = lr_fitted_a.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+
+print("Intercept:", lr_fitted_a.intercept_)
+print("Coefficients:", lr_fitted_a.coef_)
+```
+
+# Age, Sex linear model
+This model is also clearly not a good fit with an r^2 score of 0.125 and high MSE and MAE scores. This model would predict that an increase in 1 year of age would increase the charge by $209.3 and a patient being male would increase the charge by $1473.5 compared to being female.
+```{python}
+y = df['charges']
+X = df[['age', 'sex_male']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+lr_fitted_a_s = lr.fit(X_train, y_train)
+y_pred = lr_fitted_a_s.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+
+print("Intercept:", lr_fitted_a_s.intercept_)
+print("Coefficients:", lr_fitted_a_s.coef_)
+```
+
+# Age, Smoker linear model
+This model is a significantly better fit with an r^2 score of 0.807 and significantly lower MSE and MAE scores than the previous models. This model would predict charges increase by $247.9 given an increase of 1 year of age and an increase of $23783.2 for a smoker vs a non-smoker.
+```{python}
+y = df['charges']
+X = df[['age', 'smoker_yes']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+lr_fitted_a_sm = lr.fit(X_train, y_train)
+y_pred = lr_fitted_a_sm.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+
+print("Intercept:", lr_fitted_a_sm.intercept_)
+print("Coefficients:", lr_fitted_a_sm.coef_)
+```
+
+# Results
+The Age, Smoker linear model is clearly the best with an r^2 value of 0.8 vs ~0.1 for the other two, and an MSE of ~2.7e7 while the other two models have MSE values of ~1.2e8
+
+# Age, BMI linear model
+This model is slightly better than the original age lr model, however the slightly higher r^2 value and sightly lower MSE may be a result of the test/training split and could possibly switch which model scores better given a different split.
+```{python}
+y = df['charges']
+X = df[['age', 'bmi']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+lr_fitted_a_b = lr.fit(X_train, y_train)
+y_pred = lr_fitted_a_b.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+
+print("Intercept:", lr_fitted_a_b.intercept_)
+print("Coefficients:", lr_fitted_a_b.coef_)
+```
+
+# Age^2, BMI linear model
+This model is almost identical to the previous age, BMI model with almost no variation in r^2 and MSE scores.
+```{python}
+df['age2'] = df['age']**2
+y = df['charges']
+X = df[['age', 'age2', 'bmi']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+lr_fitted_a2_b = lr.fit(X_train, y_train)
+y_pred = lr_fitted_a2_b.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+
+print("Intercept:", lr_fitted_a2_b.intercept_)
+print("Coefficients:", lr_fitted_a2_b.coef_)
+```
+
+# Age, BMI multiple linear model (Age degree 4)
+This model, while still not great, is definitely better than the original with an r^2 of 0.18 vs 0.139 and an MSE of 1.16e8 vs 1.22e8
+```{python}
+y = df['charges']
+X = df[['age', 'bmi']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+ct = ColumnTransformer(
+    transformers=[
+        ("poly_age", PolynomialFeatures(degree=4, include_bias=False), ["age"]),
+        ("pass_bmi", "passthrough", ["bmi"])
+    ]
+)
+
+mlr = Pipeline([
+    ("transform", ct),
+    ("linreg", LinearRegression())
+])
+
+mlr_fitted_a_b = mlr.fit(X_train, y_train)
+y_pred = mlr_fitted_a_b.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+```
+
+# Age, BMI multiple linear model (Age degree 12)
+This model is clearly overfit with an r^2 of 0.136 and an MSE of 1.22e8, almost identical scores from the original model
+```{python}
+y = df['charges']
+X = df[['age', 'bmi']]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+ct = ColumnTransformer(
+    transformers=[
+        ("poly_age", PolynomialFeatures(degree=12, include_bias=False), ["age"]),
+        ("pass_bmi", "passthrough", ["bmi"])
+    ]
+)
+
+mlr = Pipeline([
+    ("transform", ct),
+    ("linreg", LinearRegression())
+])
+
+mlr_fitted_a_b = mlr.fit(X_train, y_train)
+y_pred_12 = mlr_fitted_a_b.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred_12)))
+print("MAE: " + str(mean_absolute_error(y_test, y_pred_12)))
+print("R^2: " + str(r2_score(y_test, y_pred_12)))
+```
+
+# Results
+The 4th degree model is clearly the best model with the highest r^2 vaule and lowest MSE which I agree with as the model does not appear to be over/underfit.
+# 12th Degree predictions plot
+```{python}
+df_plot = pd.DataFrame({
+    "age": X_test["age"],
+    "charges": y_test,
+    "predicted": y_pred_12
+}).sort_values("age")
+
+(
+    ggplot(df_plot, aes(x="age")) 
+    + geom_point(aes(y="charges"), color="blue")
+    + geom_line(aes(y="predicted"), color="red")
+    + theme_minimal()
+)
+```
+
+# New Data
+```{python}
+df_old = df
+df_new = pd.read_csv("https://www.dropbox.com/s/sky86agc4s8c6qe/insurance_costs_2.csv?dl=1")
+df_new = pd.get_dummies(df_new, columns=['sex', 'smoker', 'region'], drop_first=True)
+
+df_new.head()
+```
+
+# New Data Models
+The final model (~ (age + bmi)*smoker) appears to be the best with the lowest MSE value.
+```{python}
+df_old['age_smoker'] = df_old['age'] * df_old['smoker_yes']
+df_old['bmi_smoker'] = df_old['bmi'] * df_old['smoker_yes']
+df_new['age_smoker'] = df_new['age'] * df_new['smoker_yes']
+df_new['bmi_smoker'] = df_new['bmi'] * df_new['smoker_yes']
+
+mse = []
+
+y_train = df_old['charges']
+X_train = df_old[['age']]
+y_test = df_new['charges']
+X_test = df_new[['age']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+mse.append(mean_squared_error(y_test, y_pred))
+
+y_train = df_old['charges']
+X_train = df_old[['age', 'bmi']]
+y_test = df_new['charges']
+X_test = df_new[['age', 'bmi']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+mse.append(mean_squared_error(y_test, y_pred))
+
+y_train = df_old['charges']
+X_train = df_old[['age', 'bmi', 'smoker_yes']]
+y_test = df_new['charges']
+X_test = df_new[['age', 'bmi', 'smoker_yes']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+mse.append(mean_squared_error(y_test, y_pred))
+
+y_train = df_old['charges']
+X_train = df_old[['age', 'bmi', 'age_smoker', 'bmi_smoker']]
+y_test = df_new['charges']
+X_test = df_new[['age', 'bmi', 'age_smoker', 'bmi_smoker']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+mse.append(mean_squared_error(y_test, y_pred))
+
+y_train = df_old['charges']
+X_train = df_old[['age', 'bmi', 'age_smoker', 'bmi_smoker', 'smoker_yes']]
+y_test = df_new['charges']
+X_test = df_new[['age', 'bmi', 'age_smoker', 'bmi_smoker', 'smoker_yes']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+mse.append(mean_squared_error(y_test, y_pred))
+
+print(mse)
+```
+
+# Plotting residuals
+```{python}
+df_plot = pd.DataFrame({
+    "true": y_test,
+    "pred": y_pred,
+})
+
+df_plot["residual"] = df_plot["true"] - df_plot["pred"]
+
+(
+    ggplot(df_plot, aes(x="true", y="pred"))
+    + geom_point(alpha=0.6)
+    + geom_abline(color="red", linetype="dashed")
+    + theme_minimal()
+)
+```
+
+# Best model
+```{python}
+df_old['age^2'] = df_old['age']**2
+df_old['bmi^2'] = df_old['bmi']**2
+df_new['age^2'] = df_new['age']**2
+df_new['bmi^2'] = df_new['bmi']**2
+y_train = df_old['charges']
+X_train = df_old[['age', 'age^2', 'bmi', 'bmi^2', 'age_smoker', 'bmi_smoker', 'smoker_yes']]
+y_test = df_new['charges']
+X_test = df_new[['age', 'age^2', 'bmi', 'bmi^2', 'age_smoker', 'bmi_smoker', 'smoker_yes']]
+
+lr_fitted = lr.fit(X_train, y_train)
+y_pred = lr_fitted.predict(X_test)
+
+print("MSE: " + str(mean_squared_error(y_test, y_pred)))
+print("R^2: " + str(r2_score(y_test, y_pred)))
+```
+
+# Plotting residuals
+```{python}
+df_plot = pd.DataFrame({
+    "true": y_test,
+    "pred": y_pred,
+})
+
+df_plot["residual"] = df_plot["true"] - df_plot["pred"]
+
+(
+    ggplot(df_plot, aes(x="true", y="pred"))
+    + geom_point(alpha=0.6)
+    + geom_abline(color="red", linetype="dashed")
+    + theme_minimal()
+)
+```
