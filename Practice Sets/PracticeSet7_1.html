@@ -2198,7 +2198,7 @@ vertical-align: -.125em;
 <p>GitHub link: https://github.com/TylerWolfWilliams/GSB-544</p>
 <section id="pipelines" class="level1">
 <h1>Pipelines</h1>
-<div id="7e6171ca" class="cell" data-execution_count="1">
+<div id="27db74bb" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -2211,13 +2211,13 @@ vertical-align: -.125em;
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="f4acb11f" class="cell" data-execution_count="2">
+<div id="13258a95" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ames <span class="op">=</span> pd.read_csv(<span class="st">&quot;C:/Users/tyler/OneDrive/Desktop/GSB-544/Practice Sets/AmesHousing.csv&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="50c949e7" class="cell" data-execution_count="3">
+<div id="c91e7d0b" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> ames.drop(<span class="st">&quot;SalePrice&quot;</span>, axis <span class="op">=</span> <span class="dv">1</span>)</span>
@@ -2229,7 +2229,7 @@ vertical-align: -.125em;
 </section>
 <section id="model-1" class="level1">
 <h1>Model 1</h1>
-<div id="f2a7d18a" class="cell" data-execution_count="4">
+<div id="ccafe98f" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ct1 <span class="op">=</span> ColumnTransformer(</span>
@@ -2250,7 +2250,7 @@ vertical-align: -.125em;
 </section>
 <section id="model-2" class="level1">
 <h1>Model 2</h1>
-<div id="d317afc0" class="cell" data-execution_count="5">
+<div id="a3958c65" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ct2 <span class="op">=</span> ColumnTransformer(</span>
@@ -2272,7 +2272,7 @@ vertical-align: -.125em;
 </section>
 <section id="model-3" class="level1">
 <h1>Model 3</h1>
-<div id="7ee06107" class="cell" data-execution_count="6">
+<div id="71cb42e7" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ct3 <span class="op">=</span> ColumnTransformer(</span>
@@ -2302,7 +2302,7 @@ vertical-align: -.125em;
 </section>
 <section id="model-4" class="level1">
 <h1>Model 4</h1>
-<div id="97498379" class="cell" data-execution_count="7">
+<div id="7133c6d3" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ct4 <span class="op">=</span> ColumnTransformer(</span>
@@ -2324,7 +2324,7 @@ vertical-align: -.125em;
 </section>
 <section id="predictions" class="level1">
 <h1>Predictions</h1>
-<div id="8a590130" class="cell" data-execution_count="8">
+<div id="2be93145" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>y_pred1 <span class="op">=</span> lr_fit_1.predict(X_test)</span>
@@ -2341,7 +2341,7 @@ vertical-align: -.125em;
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(rmse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[np.float64(54252.4846522528), np.float64(52631.98713966752), np.float64(55277.65434737882), np.float64(55361.09296038076)]</code></pre>
+<pre><code>[np.float64(55303.923567882775), np.float64(54085.28595917275), np.float64(55294.25890091565), np.float64(73040.30984165131)]</code></pre>
 </div>
 </div>
 </section>
@@ -2351,7 +2351,7 @@ vertical-align: -.125em;
 </section>
 <section id="cross-validation" class="level1">
 <h1>Cross validation</h1>
-<div id="e4c84c55" class="cell" data-execution_count="9">
+<div id="5c9816b2" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> []</span>
@@ -2373,7 +2373,7 @@ vertical-align: -.125em;
 </section>
 <section id="tuning" class="level1">
 <h1>Tuning</h1>
-<div id="afb70067" class="cell" data-execution_count="10">
+<div id="ee9a6b38" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> GridSearchCV</span>
@@ -2398,7 +2398,7 @@ vertical-align: -.125em;
 <span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>gscv_fitted <span class="op">=</span> gscv.fit(X, y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="1ab2f2e2" class="cell" data-execution_count="11">
+<div id="8e6bbb86" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>obj <span class="op">=</span> gscv_fitted.cv_results_[<span class="st">&#39;params&#39;</span>]</span>
