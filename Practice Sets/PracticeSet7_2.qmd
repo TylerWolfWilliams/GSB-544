@@ -1,0 +1,291 @@
+---
+title: Practice Set 7.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Pipelines
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.compose import ColumnTransformer, make_column_selector
+```
+
+```{python}
+ames = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Practice Sets/AmesHousing.csv")
+
+# Get rid of columns with mostly NaN values
+good_cols = ames.isna().sum() < 100
+ames = ames.loc[:,good_cols]
+
+# Drop other NAs
+ames = ames.dropna()
+```
+
+# Linear Regression
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+lr_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("linear_regression", LinearRegression())]
+)
+```
+
+# Cross Val
+```{python}
+cross_val_score(lr_pipeline_1, X, y, cv = 5, scoring = 'r2')
+```
+
+# Ridge Regression
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+ridge_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("ridge_regression", Ridge(alpha = 1))]
+)
+```
+
+# Cross Val
+```{python}
+cross_val_score(ridge_pipeline_1, X, y, cv = 5, scoring = 'r2')
+```
+
+# Fit and Coefs
+```{python}
+lr_fit_1 = lr_pipeline_1.fit(X, y)
+lr_coefs = lr_fit_1.named_steps['linear_regression'].coef_
+
+ridge_fit_1 = ridge_pipeline_1.fit(X, y)
+ridge_coefs = ridge_fit_1.named_steps['ridge_regression'].coef_
+
+import matplotlib.pyplot as plt
+
+x = range(len(lr_coefs))
+plt.figure()
+plt.plot(x, lr_coefs, marker='o', label='Lr Coefficients', color='blue')
+plt.plot(x, ridge_coefs, marker='o', label='Ridge Coefficients', color='red')
+plt.legend()
+plt.show()
+```
+
+# Ridge Regression Tuning
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+ridge_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("ridge_regression", Ridge())]
+)
+
+lambdas = {'ridge_regression__alpha': [0.001, 0.01, 0.1, 1, 10]}
+
+gscv = GridSearchCV(ridge_pipeline_1, lambdas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+```
+
+# Lambda Tuning Scores
+```{python}
+gscv_fitted.cv_results_['mean_test_score']
+```
+
+# Lasso Regression Tuning
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+lasso_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("lasso_regression", Lasso())]
+)
+
+lambdas = {'lasso_regression__alpha': [0.001, 0.01, 0.1, 1, 10]}
+
+gscv = GridSearchCV(lasso_pipeline_1, lambdas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+```
+
+# Lasso Lambda Tuning Scores
+```{python}
+gscv_fitted.cv_results_['mean_test_score']
+```
+
+# LASSO Regression
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+lasso_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("lasso_regression", Lasso(alpha = 10))]
+)
+```
+
+# Fit and Coefs
+```{python}
+lasso_fit_1 = lasso_pipeline_1.fit(X, y)
+lasso_coefs = lasso_fit_1.named_steps['lasso_regression'].coef_
+
+x = range(len(lr_coefs))
+plt.figure()
+plt.plot(x, lr_coefs, marker='o', label='Lr Coefficients', color='blue')
+plt.plot(x, ridge_coefs, marker='o', label='Ridge Coefficients', color='red')
+plt.plot(x, lasso_coefs, marker='o', label='Lasso Coefficients', color='green')
+plt.legend()
+plt.show()
+```
+
+# Elastic Regression Tuning
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+elastic_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("elastic_regression", ElasticNet())]
+)
+
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10]}
+
+gscv = GridSearchCV(elastic_pipeline_1, lambdas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+```
+
+# Lambda Tuning Scores
+```{python}
+gscv_fitted.cv_results_['mean_test_score']
+```
+
+# Elastic Regression
+```{python}
+X = ames.drop(["SalePrice", "Order", "PID"], axis = 1)
+y = ames["SalePrice"]
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+
+elastic_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("elastic_regression", ElasticNet(alpha = 10))]
+)
+```
+
+# Fit and Coefs
+```{python}
+elastic_fit_1 = elastic_pipeline_1.fit(X, y)
+elastic_coefs = elastic_fit_1.named_steps['elastic_regression'].coef_
+
+x = range(len(lr_coefs))
+plt.figure()
+plt.plot(x, lr_coefs, marker='o', label='Lr Coefficients', color='blue')
+plt.plot(x, ridge_coefs, marker='o', label='Ridge Coefficients', color='red')
+plt.plot(x, lasso_coefs, marker='o', label='Lasso Coefficients', color='green')
+plt.plot(x, elastic_coefs, marker='o', label='Elastic Coefficients', color='orange')
+plt.legend()
+plt.show()
+```

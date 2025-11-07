@@ -1,0 +1,192 @@
+---
+title: Practice Set 7.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Pipelines
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.compose import ColumnTransformer
+```
+
+```{python}
+ames = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Practice Sets/AmesHousing.csv")
+```
+
+```{python}
+X = ames.drop("SalePrice", axis = 1)
+y = ames["SalePrice"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y)
+```
+
+# Model 1
+```{python}
+ct1 = ColumnTransformer(
+  [
+    ("standardize", StandardScaler(), ["Gr Liv Area", "TotRms AbvGrd"])
+  ],
+  remainder = "drop"
+)
+
+lr_pipeline_1 = Pipeline(
+  [("preprocessing", ct1),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+lr_fit_1 = lr_pipeline_1.fit(X_train, y_train)
+```
+
+# Model 2
+```{python}
+ct2 = ColumnTransformer(
+  [
+    ("dummify", OneHotEncoder(sparse_output = False), ["Bldg Type"]),
+    ("standardize", StandardScaler(), ["Gr Liv Area", "TotRms AbvGrd"])
+  ],
+  remainder = "drop"
+)
+
+lr_pipeline_2 = Pipeline(
+  [("preprocessing", ct2),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+lr_fit_2 = lr_pipeline_2.fit(X_train, y_train)
+```
+
+# Model 3
+```{python}
+ct3 = ColumnTransformer(
+  [
+    ("dummify", OneHotEncoder(sparse_output = False), ["Bldg Type"]),
+    ("standardize", StandardScaler(), ["Gr Liv Area"])
+  ],
+  remainder = "passthrough"
+)
+
+ct_inter3 = ColumnTransformer(
+  [
+    ("interaction", PolynomialFeatures(interaction_only = True), ["standardize__Gr Liv Area", "dummify__Bldg Type_1Fam"]),
+  ],
+  remainder = "drop"
+).set_output(transform = "pandas")
+
+lr_pipeline_3 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter3),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+lr_fit_3 = lr_pipeline_3.fit(X_train, y_train)
+```
+
+# Model 4
+```{python}
+ct4 = ColumnTransformer(
+  [
+    ("dummify", OneHotEncoder(sparse_output = False), ["Bldg Type"]),
+    ("polynomial", PolynomialFeatures(degree=5), ["Gr Liv Area", "TotRms AbvGrd"])
+  ],
+  remainder = "drop"
+)
+
+lr_pipeline_4 = Pipeline(
+  [("preprocessing", ct4),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+lr_fit_4 = lr_pipeline_4.fit(X_train, y_train)
+```
+
+# Predictions
+```{python}
+y_pred1 = lr_fit_1.predict(X_test)
+y_pred2 = lr_fit_2.predict(X_test)
+y_pred3 = lr_fit_3.predict(X_test)
+y_pred4 = lr_fit_4.predict(X_test)
+
+rmse = []
+rmse.append(np.sqrt(mean_squared_error(y_test, y_pred1)))
+rmse.append(np.sqrt(mean_squared_error(y_test, y_pred2)))
+rmse.append(np.sqrt(mean_squared_error(y_test, y_pred3)))
+rmse.append(np.sqrt(mean_squared_error(y_test, y_pred4)))
+
+print(rmse)
+```
+
+# Result
+The second model, size + num rooms + building type, has the lowest rmse.
+
+# Cross validation
+```{python}
+scores = []
+scores.append((-1*cross_val_score(lr_pipeline_1, X, y, cv=5, scoring='neg_root_mean_squared_error')).mean())
+scores.append((-1*cross_val_score(lr_pipeline_2, X, y, cv=5, scoring='neg_root_mean_squared_error')).mean())
+scores.append((-1*cross_val_score(lr_pipeline_3, X, y, cv=5, scoring='neg_root_mean_squared_error')).mean())
+scores.append((-1*cross_val_score(lr_pipeline_4, X, y, cv=5, scoring='neg_root_mean_squared_error')).mean())
+
+print(scores)
+```
+
+# Results
+Again the second model has the lowest rmse, concurring with the previous results.
+
+# Tuning
+```{python}
+from sklearn.model_selection import GridSearchCV
+
+ct_poly = ColumnTransformer(
+  [
+    ("dummify", OneHotEncoder(sparse_output = False), ["Bldg Type"]),
+    ("polynomial1", PolynomialFeatures(), ["Gr Liv Area"]),
+    ("polynomial2", PolynomialFeatures(), ["TotRms AbvGrd"])
+  ],
+  remainder = "drop"
+)
+
+lr_pipeline_poly = Pipeline(
+  [("preprocessing", ct_poly),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+degrees = {'preprocessing__polynomial1__degree': np.arange(1, 11), 'preprocessing__polynomial2__degree': np.arange(1, 11)}
+
+gscv = GridSearchCV(lr_pipeline_poly, degrees, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+```
+
+```{python}
+obj = gscv_fitted.cv_results_['params']
+
+pairs = [
+    (d['preprocessing__polynomial1__degree'], d['preprocessing__polynomial2__degree'])
+    for d in obj
+]
+
+results = pd.DataFrame(data = {"degrees": pairs, "scores": gscv_fitted.cv_results_['mean_test_score']})
+
+best_row = results.loc[results['scores'].idxmax()]
+
+print(best_row)
+```
+
+# Results
+It appears that the size^3, num rooms, type model is the best by r^2 score
+
+Trying all 100 models takes a long time, so reducing the search to degrees 1-5 may be better as anything more than 5 usually is overfit.
