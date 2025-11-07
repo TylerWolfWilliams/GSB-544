@@ -1,0 +1,26 @@
+---
+title: Lab 5
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Cleaning Data
+Salary is the only column with NaN values and we can't fill those NaN's with averages because it is the dependant variable so we will drop those rows. Outside of standardization and dummifying the categorical variables, there are no further cleaning steps.
+```{python}
+df = pd.read_csv("Lab 6/Hitters.csv")
+
+df = df.dropna()
+```
+
+```{python}
+
+
+```
