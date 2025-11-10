@@ -1,5 +1,5 @@
 ---
-title: Lab 5
+title: Lab 6
 echo: true
 fig-height: 3.5
 fig-width: 6
@@ -15,12 +15,576 @@ GitHub link: https://github.com/TylerWolfWilliams/GSB-544
 # Cleaning Data
 Salary is the only column with NaN values and we can't fill those NaN's with averages because it is the dependant variable so we will drop those rows. Outside of standardization and dummifying the categorical variables, there are no further cleaning steps.
 ```{python}
-df = pd.read_csv("Lab 6/Hitters.csv")
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.compose import ColumnTransformer, make_column_selector
+import matplotlib.pyplot as plt
+```
+
+```{python}
+df = pd.read_csv("C:/Users/tyler/OneDrive/Desktop/GSB-544/Lab 6/Hitters.csv")
 
 df = df.dropna()
 ```
 
 ```{python}
+X = df.drop(["Salary"], axis = 1)
+y = df["Salary"]
+```
 
+## Helper Functions
+# lambda tuning
+```{python}
+def lambda_tuning(pipeline, lambdas):
+    gscv = GridSearchCV(pipeline, lambdas, cv = 5, scoring='r2')
+    gscv_fitted = gscv.fit(X, y)
+    return gscv_fitted.cv_results_['mean_test_score']
+```
 
+# elastic lambda tuning
+```{python}
+def elastic_lambda_tuning(pipeline, lambdas):
+    gscv = GridSearchCV(pipeline, lambdas, cv = 5, scoring='r2')
+    gscv_fitted = gscv.fit(X, y)
+    obj = gscv_fitted.cv_results_['params']
+
+    pairs = [
+        (d['elastic_regression__alpha'], d['elastic_regression__l1_ratio'])
+        for d in obj
+    ]
+
+    results = pd.DataFrame({
+        "alpha_l1ratio": pairs,
+        "scores": gscv_fitted.cv_results_['mean_test_score']
+    })
+
+    best_row = results.loc[results['scores'].idxmax()]
+
+    return best_row
+```
+
+# fit and coefs
+```{python}
+def fit_coefs(pipeline, coef_step):
+    fit = pipeline.fit(X, y)
+    feature_names = fit.named_steps['preprocessing'].get_feature_names_out()
+    coefs = fit.named_steps[coef_step].coef_
+
+    coef_df = pd.DataFrame({
+        'feature': feature_names,
+        'coefficient': coefs
+    })
+
+    return coef_df
+```
+
+# All Variables ColumnTransformer
+```{python}
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object)),
+    ("standardize", 
+    StandardScaler(), 
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+)
+```
+
+# LR Pipeline
+```{python}
+lr_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("linear_regression", LinearRegression())]
+)
+```
+
+# Fit and Coefs
+After fitting the model, we can directly compare numerical coefficients by finding the maximum absolute values of the coefs because the variables are standardized. So we can see that the career stats are the most impactful with career runs being the most important with a +480 coef. Hits is the 3rd most important and the most important non-career stat. These coefs mean a 1 SD increase in CRuns results in a 480 unit increase in Salary
+```{python}
+coefs1 = fit_coefs(lr_pipeline_1, 'linear_regression')
+print(coefs1)
+```
+
+# CV mean
+```{python}
+(-1*cross_val_score(lr_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Ridge pipeline and lambda tuning
+```{python}
+ridge_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("ridge_regression", Ridge())]
+)
+
+lambdas = {'ridge_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(ridge_pipeline_1, lambdas)
+```
+
+# Ridge pipeline (L=100)
+```{python}
+ridge_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+```
+
+# Fit and Coefs
+Again, career hits, runs, and RBIs are some of the most important, but PutOuts is the most important this time with a coef of 56 followed by hits with a coef of 49. These coefs mean a 1 SD increase in PutOuts or Hits results in a 56 or 49 unit increase in Salary
+```{python}
+coefs2 = fit_coefs(ridge_pipeline_1, 'ridge_regression')
+print(coefs2)
+```
+
+# CV mean
+```{python}
+(-1*cross_val_score(ridge_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Lasso pipeline and lambda tuning
+```{python}
+lasso_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("lasso_regression", Lasso())]
+)
+
+lambdas = {'lasso_regression__alpha': [0.01, 0.1, 1, 3, 7, 10]}
+
+lambda_tuning(lasso_pipeline_1, lambdas)
+```
+
+# Lasso pipeline (L=10)
+```{python}
+lasso_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("lasso_regression", Lasso(alpha = 10))]
+)
+```
+
+# Fit and Coefs
+These coefs are far smaller with the majority being 0. The important coefs are still the career stats with CHmRun being the most important, however Hits is a close second. A 1 SD increase in CHmRunresults in a 375 unit increase in Salary
+```{python}
+coefs3 = fit_coefs(lasso_pipeline_1, 'lasso_regression')
+print(coefs3)
+```
+
+# CV mean
+```{python}
+(-1*cross_val_score(lasso_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# ElasticNet pipeline and lambda tuning
+```{python}
+elastic_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("elastic_regression", ElasticNet())]
+)
+
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10], 'elastic_regression__l1_ratio': [0.001, 0.01, 0.1, 0.5, 0.8]}
+
+elastic_lambda_tuning(elastic_pipeline_1, lambdas)
+```
+
+# ElasticNet pipeline (L=1, A=0.1)
+```{python}
+elastic_pipeline_1 = Pipeline(
+  [("preprocessing", ct),
+  ("elastic_regression", ElasticNet(alpha = 1, l1_ratio=0.1))]
+)
+```
+
+# Fit and Coefs
+The important coefs CRuns being the most important with Hits as a close second. A 1 SD increase in CRuns results in a 294 unit increase in Salary
+```{python}
+coefs4 = fit_coefs(elastic_pipeline_1, 'elastic_regression')
+print(coefs4)
+```
+
+# CV mean
+```{python}
+(-1*cross_val_score(elastic_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Variable Selection
+I am taking the coefs from all 4 models, standardizing them so they are on the same scale, and then summing them to find the most important variables. I am making sure to take the absolute value as I care about magnitude not direction
+
+The most important variable is CRuns. The top 5 numerical variables are CRuns, Hits, AtBat, CAtBat, and CWalks. The most important categorical variable is Division
+```{python}
+coefs_all = pd.concat([
+    coefs1.assign(model="Model 1"),
+    coefs2.assign(model="Model 2"),
+    coefs3.assign(model="Model 3"),
+    coefs4.assign(model="Model 4")
+])
+
+coefs_all["coef_std"] = (
+    coefs_all.groupby("model")["coefficient"]
+    .transform(lambda x: (x - x.mean()) / x.std())
+)
+
+summary = (
+    coefs_all.groupby("feature")["coef_std"]
+    .sum()
+    .abs()
+    .sort_values(ascending=False)
+    .reset_index()
+)
+
+print(summary)
+```
+
+# CRuns ColumnTransformer
+```{python}
+ct1 = ColumnTransformer(
+  [
+    ("standardize", StandardScaler(), ["CRuns"])
+  ],
+  remainder = "drop"
+)
+```
+
+# Top 5 ColumnTransformer
+```{python}
+ct2 = ColumnTransformer(
+  [
+    ("standardize", StandardScaler(), ["CRuns", "Hits", "AtBat", "CAtBat", "CWalks"])
+  ],
+  remainder = "drop"
+)
+```
+
+# Top 5 with interaction ColumnTransformer
+```{python}
+ct3 = ColumnTransformer(
+  [
+    ("dummify", OneHotEncoder(sparse_output = False), ["Division"]),
+    ("standardize", StandardScaler(), ["CRuns", "Hits", "AtBat", "CAtBat", "CWalks"])
+  ],
+  remainder = "drop"
+)
+
+ct_inter = ColumnTransformer(
+  [
+    ("interaction", PolynomialFeatures(interaction_only = True), ["standardize__CRuns", "standardize__Hits", "standardize__AtBat", "standardize__CAtBat", "standardize__CWalks", "dummify__Division_W"]),
+  ],
+  remainder = "drop"
+).set_output(transform = "pandas")
+```
+
+# LR CRuns Pipeline
+```{python}
+lr_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("linear_regression", LinearRegression())]
+)
+
+(-1*cross_val_score(lr_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# LR Top 5 Pipeline
+```{python}
+lr_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("linear_regression", LinearRegression())]
+)
+
+(-1*cross_val_score(lr_pipeline_3, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# LR Inter Pipeline
+```{python}
+lr_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("linear_regression", LinearRegression())]
+).set_output(transform="pandas")
+
+(-1*cross_val_score(lr_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Ridge pipeline and lambda tuning CRuns
+```{python}
+ridge_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("ridge_regression", Ridge())]
+)
+
+lambdas = {'ridge_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(ridge_pipeline_2, lambdas)
+```
+
+# Ridge pipeline (L=1)
+```{python}
+ridge_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("ridge_regression", Ridge(alpha = 1))]
+)
+
+(-1*cross_val_score(ridge_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Ridge pipeline and lambda tuning Top 5
+```{python}
+ridge_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("ridge_regression", Ridge())]
+)
+
+lambdas = {'ridge_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(ridge_pipeline_3, lambdas)
+```
+
+# Ridge pipeline (L=1)
+```{python}
+ridge_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("ridge_regression", Ridge(alpha = 1))]
+)
+
+(-1*cross_val_score(ridge_pipeline_3, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Ridge pipeline and lambda tuning Top 5
+```{python}
+ridge_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("ridge_regression", Ridge())]
+)
+
+lambdas = {'ridge_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(ridge_pipeline_4, lambdas)
+```
+
+# Ridge pipeline (L=100)
+```{python}
+ridge_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+(-1*cross_val_score(ridge_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Lasso pipeline and lambda tuning CRuns
+```{python}
+lasso_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("lasso_regression", Lasso())]
+)
+
+lambdas = {'lasso_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(lasso_pipeline_2, lambdas)
+```
+
+# Lasso pipeline (L=10)
+```{python}
+lasso_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("lasso_regression", Lasso(alpha = 10))]
+)
+
+(-1*cross_val_score(lasso_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Lasso pipeline and lambda tuning Top 5
+```{python}
+lasso_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("lasso_regression", Lasso())]
+)
+
+lambdas = {'lasso_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(lasso_pipeline_3, lambdas)
+```
+
+# Lasso pipeline (L=1)
+```{python}
+lasso_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("lasso_regression", Lasso(alpha = 1))]
+)
+
+(-1*cross_val_score(lasso_pipeline_3, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Lasso pipeline and lambda tuning Inter
+```{python}
+lasso_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("lasso_regression", Lasso())]
+)
+
+lambdas = {'lasso_regression__alpha': [0.01, 0.1, 1, 10, 100, 500]}
+
+lambda_tuning(lasso_pipeline_4, lambdas)
+```
+
+# Lasso pipeline (L=10)
+```{python}
+lasso_pipeline_2 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("lasso_regression", Lasso(alpha = 10))]
+)
+
+(-1*cross_val_score(lasso_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Elastic pipeline and lambda tuning CRuns
+```{python}
+elastic_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("elastic_regression", ElasticNet())]
+)
+
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10], 'elastic_regression__l1_ratio': [0.001, 0.01, 0.1, 0.5, 0.8]}
+
+elastic_lambda_tuning(elastic_pipeline_2, lambdas)
+```
+
+# ElasticNet pipeline (L=0.1, A=0.5)
+```{python}
+elastic_pipeline_2 = Pipeline(
+  [("preprocessing", ct1),
+  ("elastic_regression", ElasticNet(alpha = 0.1, l1_ratio=0.5))]
+)
+
+(-1*cross_val_score(lasso_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Elastic pipeline and lambda tuning Top 5
+```{python}
+elastic_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("elastic_regression", ElasticNet())]
+)
+
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10], 'elastic_regression__l1_ratio': [0.001, 0.01, 0.1, 0.5, 0.8]}
+
+elastic_lambda_tuning(elastic_pipeline_3, lambdas)
+```
+
+# ElasticNet pipeline (L=0.01, A=0.001)
+```{python}
+elastic_pipeline_3 = Pipeline(
+  [("preprocessing", ct2),
+  ("elastic_regression", ElasticNet(alpha = 0.01, l1_ratio=0.001))]
+)
+
+(-1*cross_val_score(elastic_pipeline_3, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Elastic pipeline and lambda tuning Inter
+```{python}
+elastic_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("elastic_regression", ElasticNet())]
+)
+
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10], 'elastic_regression__l1_ratio': [0.001, 0.01, 0.1, 0.5, 0.8]}
+
+elastic_lambda_tuning(elastic_pipeline_4, lambdas)
+```
+
+# ElasticNet pipeline (L=1, A=0.1)
+```{python}
+elastic_pipeline_4 = Pipeline(
+  [("preprocessing", ct3),
+  ("interaction", ct_inter),
+  ("elastic_regression", ElasticNet(alpha = 1, l1_ratio=0.1))]
+)
+
+(-1*cross_val_score(elastic_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean()
+```
+
+# Results
+The Ridge interaction model and the Elastic interaction model both return MSE scores of ~112000.
+
+# Discussion
+
+# A
+The coefficients in the Ridge models are far smaller than the original model, by almost a factor of 10, which makes sense because ridge tries to balance SSE while keeping the Betas small.
+```{python}
+print("Original Coefs")
+print(coefs1)
+print("Ridge Coefs")
+print(coefs2)
+```
+
+# B
+For each of my Lasso models I got a lambda of 10 except for the Top 5 model which found a lambda of 1 was best. This makes sense because the data doesn't change, only the model params which themselves are standardized. I got differing MSE values however which also makes sense because the differences in the models will affect how well they predict salary on future data.
+```{python}
+print("Lasso Original MSE")
+print((-1*cross_val_score(lasso_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Lasso CRuns MSE")
+print((-1*cross_val_score(lasso_pipeline_2, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Lasso Top 5 MSE")
+print((-1*cross_val_score(lasso_pipeline_3, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Lasso Inter MSE")
+print((-1*cross_val_score(lasso_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+```
+
+# C
+While my MSE values don't show Elastic drastically "winning" it would make sense that it is equal or better to the other models because it is essentially a combination of Ridge and Lasso.
+```{python}
+print("Ridge Original MSE")
+print((-1*cross_val_score(ridge_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Lasso Original MSE")
+print((-1*cross_val_score(lasso_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Elastic Original MSE")
+print((-1*cross_val_score(elastic_pipeline_1, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Ridge Inter MSE")
+print((-1*cross_val_score(ridge_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Lasso Inter MSE")
+print((-1*cross_val_score(lasso_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+print("Elastic Inter MSE")
+print((-1*cross_val_score(elastic_pipeline_4, X, y, cv = 5, scoring = 'neg_mean_squared_error')).mean())
+```
+
+# Final Model
+
+```{python}
+final_fit_model = elastic_pipeline_4.fit(X, y)
+feature_names = final_fit_model.named_steps['interaction'].get_feature_names_out()
+coefs = final_fit_model.named_steps["elastic_regression"].coef_
+
+coef_df = pd.DataFrame({
+    'feature': feature_names,
+    'coefficient': coefs
+})
+
+coef_df
+```
+
+In the final ElasticNet model (L = 1, A = 0.1) the most influential variables for predicting player salary are career runs (CRuns), career walks (CWalks), career at-bats (CAtBat), at bats, and hits, along with their interaction effects. Players with stronger long-term batting performance (especially higher CRuns and CWalks) tend to earn higher salaries. Division (East vs West) still shows a smaller but noticeable influence. Overall, the model highlights that career consistency and offensive productivity are the strongest indicators of player pay, rather than recent or single-season stats.
+
+```{python}
+coef_df["abs_coef"] = coef_df["coefficient"].abs()
+coef_sorted = coef_df.sort_values("abs_coef", ascending=False)
+
+plt.figure(figsize=(8,6))
+plt.barh(coef_sorted["feature"], coef_sorted["coefficient"])
+plt.title("ElasticNet Coefficients (Feature Importance)")
+plt.xlabel("Coefficient Value")
+plt.ylabel("Feature")
+plt.gca().invert_yaxis()
+plt.show()
 ```

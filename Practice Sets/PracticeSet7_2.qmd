@@ -240,7 +240,7 @@ elastic_pipeline_1 = Pipeline(
   ("elastic_regression", ElasticNet())]
 )
 
-lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10]}
+lambdas = {'elastic_regression__alpha': [0.001, 0.01, 0.1, 1, 10], 'elastic_regression__l1_ratio': [0.001, 0.01, 0.1, 0.5, 0.8]}
 
 gscv = GridSearchCV(elastic_pipeline_1, lambdas, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
@@ -271,7 +271,7 @@ ct = ColumnTransformer(
 
 elastic_pipeline_1 = Pipeline(
   [("preprocessing", ct),
-  ("elastic_regression", ElasticNet(alpha = 10))]
+  ("elastic_regression", ElasticNet(alpha = 10, l1_ratio = 0.1))]
 )
 ```
 
