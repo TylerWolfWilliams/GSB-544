@@ -1,0 +1,147 @@
+---
+title: Practice Set 8.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Palmer Penguins Modeling
+
+Import the Palmer Penguins dataset and print out the first few rows.
+
+Suppose we want to predict `species` using the other variables in the dataset.
+
+**Dummify** all variables that require this.
+
+# Code 
+
+```{python}
+from palmerpenguins import load_penguins
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, label_binarize
+from sklearn.compose import ColumnTransformer, make_column_selector
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, classification_report, roc_auc_score, roc_curve, RocCurveDisplay
+```
+
+```{python}
+df = load_penguins()
+df = df.dropna()
+df.head()
+df.dtypes
+```
+
+```{python}
+X = df.drop(["species"], axis = 1)
+y = df["species"].astype(str)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y)
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'), ["island", "sex"])
+  ],
+  remainder = "passthrough"
+)
+
+knn_pipeline_3 = Pipeline(
+    [("preprocessing", ct),
+    ("knn", KNeighborsRegressor(n_neighbors=3))]
+)
+
+knn_pipeline_10 = Pipeline(
+    [("preprocessing", ct),
+    ("knn", KNeighborsRegressor(n_neighbors=10))]
+)
+
+dt_pipeline_2 = Pipeline(
+    [("preprocessing", ct),
+    ("decision_tree", DecisionTreeRegressor(max_depth=2))]
+)
+
+dt_pipeline_4 = Pipeline(
+    [("preprocessing", ct),
+    ("decision_tree", DecisionTreeRegressor(max_depth=4))]
+)
+
+```
+
+Let's use the other variables to predict `species`. Prepare your data and fit the following models on the entire dataset:
+
+* Two kNN models (for different values of K)
+* Two decision tree models (for different complexities of trees)
+
+Compute the following, for each of your models, on test data. Keep in mind that you may need to stratify your creation of the training and test data.
+
+* Overall Accuracy
+* Precision, Recall, AUC, and F1-score for each species
+
+Create one ROC plot for the species of your choice.
+
+# Code Here
+
+```{python}
+knn_pipeline_3_fit = knn_pipeline_3.fit(X_train, y_train)
+knn_pipeline_3_fit.predict(X_test)
+```
+
+```{python}
+models = {
+    "kNN (k=3)": knn_pipeline_3,
+    "kNN (k=10)": knn_pipeline_10,
+    "Decision Tree (depth=2)": dt_pipeline_2,
+    "Decision Tree (depth=4)": dt_pipeline_4
+}
+
+results = []
+
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    acc = accuracy_score(y_test, preds)
+    print(f"=== {name} ===")
+    print(f"Accuracy: {acc:.3f}")
+    print(classification_report(y_test, preds))
+    results.append({"Model": name, "Accuracy": acc})
+```
+
+
+```{python}
+y_test_bin = label_binarize(y_test, classes=y.unique())
+species_names = list(y.unique())
+species_idx = species_names.index("Adelie")
+
+# Choose one trained model (e.g., Decision Tree depth=4)
+model = dt_pipeline_4.fit(X_train, y_train)
+y_score = model.predict_proba(X_test)
+
+# Compute ROC for Adelie
+fpr, tpr, _ = roc_curve(y_test_bin[:, species_idx], y_score[:, species_idx])
+auc = roc_auc_score(y_test_bin[:, species_idx], y_score[:, species_idx])
+
+plt.figure(figsize=(7,5))
+plt.plot(fpr, tpr, label=f"Adelie (AUC = {auc:.2f})")
+plt.plot([0,1], [0,1], "k--")
+plt.title("ROC Curve for Adelie")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.legend()
+plt.show()
+
+```

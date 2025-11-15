@@ -1,0 +1,142 @@
+---
+title: Practice Set 8.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+# Palmer Penguins Modeling
+
+Import the Palmer Penguins dataset and print out the first few rows.
+
+Suppose we want to predict `bill_depth_mm` using the other variables in the dataset.
+
+**Dummify** all variables that require this.
+
+# Code Here
+
+```{python}
+from palmerpenguins import load_penguins
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer, make_column_selector
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+```
+
+```{python}
+df = load_penguins()
+df = df.dropna()
+df.head()
+```
+
+```{python}
+X = df.drop(["bill_depth_mm"], axis = 1)
+y = df["bill_depth_mm"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+
+
+ct = ColumnTransformer(
+  [
+    ("dummify", 
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore'),
+    make_column_selector(dtype_include=object))
+  ],
+  remainder = "passthrough"
+)
+
+lr_pipeline = Pipeline(
+  [("preprocessing", ct),
+  ("linear_regression", LinearRegression())]
+)
+
+knn_pipeline_3 = Pipeline(
+    [("preprocessing", ct),
+    ("knn", KNeighborsRegressor(n_neighbors=3))]
+)
+
+knn_pipeline_10 = Pipeline(
+    [("preprocessing", ct),
+    ("knn", KNeighborsRegressor(n_neighbors=10))]
+)
+
+decision_tree_pipeline = Pipeline(
+    [("preprocessing", ct),
+    ("decision_tree", DecisionTreeRegressor())]
+)
+
+lr_pipeline_fit = lr_pipeline.fit(X_train, y_train)
+knn_pipeline_3_fit = knn_pipeline_3.fit(X_train, y_train)
+knn_pipeline_10_fit = knn_pipeline_10.fit(X_train, y_train)
+decision_tree_pipeline_fit = decision_tree_pipeline.fit(X_train, y_train)
+```
+
+Let's use the other variables to predict `bill_depth_mm`. Prepare your data and fit the following models on the entire dataset:
+
+* Your best multiple linear regression model from before
+* Two kNN models (for different values of K)
+* A decision tree model
+
+Create a plot like the right plot of Fig 1. in our `Model Validation` chapter with the training and test error plotted for each of your four models.
+
+Which of your models was best?
+
+
+```{python}
+y_test_pred_1 = lr_pipeline_fit.predict(X_test)
+y_train_pred_1 = lr_pipeline_fit.predict(X_train)
+mse_test_1 = mean_squared_error(y_test, y_test_pred_1)
+mse_train_1 = mean_squared_error(y_train, y_train_pred_1)
+
+y_test_pred_2 = knn_pipeline_3_fit.predict(X_test)
+y_train_pred_2 = knn_pipeline_3_fit.predict(X_train)
+mse_test_2 = mean_squared_error(y_test, y_test_pred_2)
+mse_train_2 = mean_squared_error(y_train, y_train_pred_2)
+
+y_test_pred_3 = knn_pipeline_10_fit.predict(X_test)
+y_train_pred_3 = knn_pipeline_10_fit.predict(X_train)
+mse_test_3 = mean_squared_error(y_test, y_test_pred_3)
+mse_train_3 = mean_squared_error(y_train, y_train_pred_3)
+
+y_test_pred_4 = decision_tree_pipeline_fit.predict(X_test)
+y_train_pred_4 = decision_tree_pipeline_fit.predict(X_train)
+mse_test_4 = mean_squared_error(y_test, y_test_pred_4)
+mse_train_4 = mean_squared_error(y_train, y_train_pred_4)
+
+
+mse_df = pd.DataFrame({
+    'Model': ['Linear Regression', 'KNN (k=3)', 'KNN (k=10)', 'Decision Tree'],
+    'Train MSE': [mse_train_1, mse_train_2, mse_train_3, mse_train_4],
+    'Test MSE': [mse_test_1, mse_test_2, mse_test_3, mse_test_4]
+})
+
+
+fig, ax = plt.subplots(figsize=(8, 5))
+bar_width = 0.35
+x = range(len(mse_df))
+
+ax.bar(x, mse_df['Train MSE'], width=bar_width, label='Train MSE', alpha=0.7)
+ax.bar([i + bar_width for i in x], mse_df['Test MSE'], width=bar_width, label='Test MSE', alpha=0.7)
+
+ax.set_xticks([i + bar_width/2 for i in x])
+ax.set_xticklabels(mse_df['Model'], rotation=15)
+ax.set_ylabel('Mean Squared Error')
+ax.set_title('Train vs Test MSE by Model')
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
