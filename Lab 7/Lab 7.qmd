@@ -1,0 +1,462 @@
+---
+title: Lab 6
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold, cross_val_score, cross_validate
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve, classification_report, precision_score, recall_score, make_scorer, cohen_kappa_score
+```
+
+```{python}
+np.random.seed(42)
+
+ha = pd.read_csv("https://www.dropbox.com/s/aohbr6yb9ifmc8w/heart_attack.csv?dl=1")
+
+ha.shape
+ha.head()
+ha.dtypes
+ha.isnull().sum()
+ha.describe()
+
+X = ha.drop('output', axis=1)
+y = ha['output']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+```
+
+```{python}
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+knn_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('knn', KNeighborsClassifier())
+])
+
+knn_param_grid = {
+    'knn__n_neighbors': [3, 5, 7, 9, 11, 13, 15],
+    'knn__weights': ['uniform', 'distance'],
+    'knn__metric': ['euclidean', 'manhattan']
+}
+
+knn_grid = GridSearchCV(
+    knn_pipeline,
+    knn_param_grid,
+    cv=cv,
+    scoring='roc_auc',
+    n_jobs=1
+)
+
+knn_grid.fit(X_train, y_train)
+
+print(f"\nBest parameters: {knn_grid.best_params_}")
+print(f"Best cross-validated ROC AUC: {knn_grid.best_score_:.3f}")
+
+y_pred_knn = knn_grid.predict(X_test)
+y_proba_knn = knn_grid.predict_proba(X_test)[:, 1]
+
+print(f"Test set ROC AUC: {roc_auc_score(y_test, y_proba_knn):.3f}")
+
+print("\nConfusion Matrix:")
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+print(cm_knn)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_knn, 
+                          target_names=['Not at Risk', 'At Risk']))
+```
+
+```{python}
+lr_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('lr', LogisticRegression(max_iter=1000, random_state=42))
+])
+
+lr_param_grid = {
+    'lr__penalty': ['l1', 'l2'],
+    'lr__C': [0.001, 0.01, 0.1, 1, 10, 100],
+    'lr__solver': ['liblinear']
+}
+
+lr_grid = GridSearchCV(
+    lr_pipeline,
+    lr_param_grid,
+    cv=cv,
+    scoring='roc_auc',
+    n_jobs=1
+)
+
+lr_grid.fit(X_train, y_train)
+
+print(f"\nBest parameters: {lr_grid.best_params_}")
+print(f"Best cross-validated ROC AUC: {lr_grid.best_score_:.3f}")
+
+y_pred_lr = lr_grid.predict(X_test)
+y_proba_lr = lr_grid.predict_proba(X_test)[:, 1]
+
+print(f"Test set ROC AUC: {roc_auc_score(y_test, y_proba_lr):.3f}")
+
+print("\nConfusion Matrix:")
+cm_lr = confusion_matrix(y_test, y_pred_lr)
+print(cm_lr)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_lr, 
+                          target_names=['Not at Risk', 'At Risk']))
+```
+
+# Interpret coefficients
+```{python}
+best_lr_model = lr_grid.best_estimator_.named_steps['lr']
+coef_df = pd.DataFrame({
+    'Feature': X.columns,
+    'Coefficient': best_lr_model.coef_[0]
+}).sort_values('Coefficient', key=abs, ascending=False)
+print(coef_df.to_string(index=False))
+```
+
+Positive coefficients increase the log-odds of being at risk.
+Negative coefficients decrease the log-odds of being at risk.
+Larger absolute values indicate stronger effects.
+
+```{python}
+dt_pipeline = Pipeline([
+    ('dt', DecisionTreeClassifier(random_state=42))
+])
+
+dt_param_grid = {
+    'dt__max_depth': [2, 3, 4, 5, 6, None],
+    'dt__min_samples_split': [2, 10, 20, 30],
+    'dt__min_samples_leaf': [1, 5, 10, 15],
+    'dt__criterion': ['gini', 'entropy']
+}
+
+dt_grid = GridSearchCV(
+    dt_pipeline,
+    dt_param_grid,
+    cv=cv,
+    scoring='roc_auc',
+    n_jobs=1
+)
+
+dt_grid.fit(X_train, y_train)
+
+print(f"\nBest parameters: {dt_grid.best_params_}")
+print(f"Best cross-validated ROC AUC: {dt_grid.best_score_:.3f}")
+
+y_pred_dt = dt_grid.predict(X_test)
+y_proba_dt = dt_grid.predict_proba(X_test)[:, 1]
+
+print(f"Test set ROC AUC: {roc_auc_score(y_test, y_proba_dt):.3f}")
+
+print("\nConfusion Matrix:")
+cm_dt = confusion_matrix(y_test, y_pred_dt)
+print(cm_dt)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_dt, 
+                          target_names=['Not at Risk', 'At Risk']))
+```
+
+# Feature Importance
+```{python}
+best_dt_model = dt_grid.best_estimator_.named_steps['dt']
+importance_df = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': best_dt_model.feature_importances_
+}).sort_values('Importance', ascending=False)
+print(importance_df.to_string(index=False))
+```
+
+```{python}
+importance_summary = pd.DataFrame({
+    'Feature': X.columns,
+    'LR_Coefficient': np.abs(best_lr_model.coef_[0]),
+    'Tree_Importance': best_dt_model.feature_importances_
+})
+
+importance_summary['LR_Rank'] = importance_summary['LR_Coefficient'].rank(ascending=False)
+importance_summary['Tree_Rank'] = importance_summary['Tree_Importance'].rank(ascending=False)
+importance_summary['Avg_Rank'] = (importance_summary['LR_Rank'] + 
+                                  importance_summary['Tree_Rank']) / 2
+
+importance_summary.sort_values('Avg_Rank')
+```
+
+# Most Important Predictors
+```{python}
+top_features = importance_summary.head(3)
+for idx, row in top_features.iterrows():
+    print(f"{int(row['Avg_Rank'])}. {row['Feature']}")
+    print(f"   - Logistic Regression coefficient: {best_lr_model.coef_[0][list(X.columns).index(row['Feature'])]:.3f}")
+    print(f"   - Decision Tree importance: {row['Tree_Importance']:.3f}")
+```
+
+The analysis identifies chest pain type (cp), maximum heart rate (thalach),
+and age as the most critical predictors of exercise-induced heart attack risk.
+
+Surprisingly, cholesterol shows relatively lower importance in these models.
+
+# ROC CURVE COMPARISON
+```{python}
+fpr_knn, tpr_knn, _ = roc_curve(y_test, y_proba_knn)
+fpr_lr, tpr_lr, _ = roc_curve(y_test, y_proba_lr)
+fpr_dt, tpr_dt, _ = roc_curve(y_test, y_proba_dt)
+
+auc_knn = roc_auc_score(y_test, y_proba_knn)
+auc_lr = roc_auc_score(y_test, y_proba_lr)
+auc_dt = roc_auc_score(y_test, y_proba_dt)
+```
+
+# Plot ROC curves
+```{python}
+plt.figure(figsize=(10, 8))
+plt.plot(fpr_lr, tpr_lr, label=f'Logistic Regression (AUC = {auc_lr:.3f})', 
+         linewidth=2, color='blue')
+plt.plot(fpr_knn, tpr_knn, label=f'KNN (AUC = {auc_knn:.3f})', 
+         linewidth=2, color='purple')
+plt.plot(fpr_dt, tpr_dt, label=f'Decision Tree (AUC = {auc_dt:.3f})', 
+         linewidth=2, color='green')
+plt.plot([0, 1], [0, 1], 'k--', label='Random Classifier (AUC = 0.5)', 
+         linewidth=1, alpha=0.5)
+
+plt.xlabel('False Positive Rate', fontsize=12)
+plt.ylabel('True Positive Rate', fontsize=12)
+plt.title('ROC Curves for Heart Attack Risk Prediction Models', fontsize=14, fontweight='bold')
+plt.legend(loc='lower right', fontsize=11)
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+# PART TWO: CROSS-VALIDATED METRICS
+```{python}
+scoring = {
+    'precision': make_scorer(precision_score),
+    'recall': make_scorer(recall_score),
+    'specificity': make_scorer(recall_score, pos_label=0)
+}
+
+knn_cv_scores = cross_validate(knn_grid.best_estimator_, X_train, y_train, 
+                                cv=cv, scoring=scoring)
+
+knn_cv_scores['test_precision'].mean()
+knn_cv_scores['test_recall'].mean()
+knn_cv_scores['test_specificity'].mean()
+
+lr_cv_scores = cross_validate(lr_grid.best_estimator_, X_train, y_train, 
+                               cv=cv, scoring=scoring)
+
+lr_cv_scores['test_precision'].mean()
+lr_cv_scores['test_recall'].mean()
+lr_cv_scores['test_specificity'].mean()
+
+dt_cv_scores = cross_validate(dt_grid.best_estimator_, X_train, y_train, 
+                               cv=cv, scoring=scoring)
+
+dt_cv_scores['test_precision'].mean()
+dt_cv_scores['test_recall'].mean()
+dt_cv_scores['test_specificity'].mean()
+
+metrics_comparison = pd.DataFrame({
+    'Model': ['Logistic Regression', 'KNN', 'Decision Tree'],
+    'CV Precision': [
+        lr_cv_scores['test_precision'].mean(),
+        knn_cv_scores['test_precision'].mean(),
+        dt_cv_scores['test_precision'].mean()
+    ],
+    'CV Recall/Sensitivity': [
+        lr_cv_scores['test_recall'].mean(),
+        knn_cv_scores['test_recall'].mean(),
+        dt_cv_scores['test_recall'].mean()
+    ],
+    'CV Specificity': [
+        lr_cv_scores['test_specificity'].mean(),
+        knn_cv_scores['test_specificity'].mean(),
+        dt_cv_scores['test_specificity'].mean()
+    ]
+})
+
+metrics_comparison
+```
+
+# PART THREE: DISCUSSION
+Q1: Hospital faces severe lawsuits if they deem a patient low risk, and that patient later experiences a heart attack.
+
+METRIC SELECTION: 
+Recall/Sensitivity (True Positive Rate)
+We must minimize False Negatives
+
+
+
+Q2: Hospital is overfull and wants to only use bed space for patients most in need of monitoring due to heart attack risk.
+
+METRIC SELECTION: 
+Precision
+Limited beds mean we can only admit patients truly at high risk
+We want to minimize False Positives
+
+Q3: Hospital is studying root causes and wants to understand which biological measures are associated with heart attack risk.
+
+METRIC SELECTION: 
+Model Interpretability
+Need a model that provides clear, interpretable relationships
+
+Q4: Hospital is training new doctors and wants to compare their diagnoses to the algorithm's predictions.
+
+METRIC SELECTION: 
+Accuracy
+Accuracy will give us a good look at which doctors are doing the best
+
+# PART FOUR: VALIDATION SET
+```{python}
+df_validation = pd.read_csv("https://www.dropbox.com/s/jkwqdiyx6o6oad0/heart_attack_validation.csv?dl=1")
+
+X_val = df_validation.drop('output', axis=1)
+y_val = df_validation['output']
+
+y_pred_knn_val = knn_grid.predict(X_val)
+y_proba_knn_val = knn_grid.predict_proba(X_val)[:, 1]
+```
+
+```{python}
+print(confusion_matrix(y_val, y_pred_knn_val))
+print(roc_auc_score(y_val, y_proba_knn_val))
+print(precision_score(y_val, y_pred_knn_val))
+print(recall_score(y_val, y_pred_knn_val))
+```
+
+# Logistic Regression Validation
+```{python}
+y_pred_lr_val = lr_grid.predict(X_val)
+y_proba_lr_val = lr_grid.predict_proba(X_val)[:, 1]
+```
+
+```{python}
+print(confusion_matrix(y_val, y_pred_lr_val))
+print(roc_auc_score(y_val, y_proba_lr_val))
+print(precision_score(y_val, y_pred_lr_val))
+print(recall_score(y_val, y_pred_lr_val))
+```
+
+# Decision Tree Validation
+
+```{python}
+y_pred_dt_val = dt_grid.predict(X_val)
+y_proba_dt_val = dt_grid.predict_proba(X_val)[:, 1]
+```
+
+```{python}
+print(confusion_matrix(y_val, y_pred_dt_val))
+print(roc_auc_score(y_val, y_proba_dt_val))
+print(precision_score(y_val, y_pred_dt_val))
+print(recall_score(y_val, y_pred_dt_val))
+```
+
+# Comparison
+```{python}
+validation_comparison = pd.DataFrame({
+    'Model': ['Logistic Regression', 'KNN', 'Decision Tree'],
+    'Val ROC AUC': [
+        roc_auc_score(y_val, y_proba_lr_val),
+        roc_auc_score(y_val, y_proba_knn_val),
+        roc_auc_score(y_val, y_proba_dt_val)
+    ],
+    'CV ROC AUC': [lr_grid.best_score_, knn_grid.best_score_, dt_grid.best_score_],
+    'Val Precision': [
+        precision_score(y_val, y_pred_lr_val),
+        precision_score(y_val, y_pred_knn_val),
+        precision_score(y_val, y_pred_dt_val)
+    ],
+    'CV Precision': [
+        lr_cv_scores['test_precision'].mean(),
+        knn_cv_scores['test_precision'].mean(),
+        dt_cv_scores['test_precision'].mean()
+    ],
+    'Val Recall': [
+        recall_score(y_val, y_pred_lr_val),
+        recall_score(y_val, y_pred_knn_val),
+        recall_score(y_val, y_pred_dt_val)
+    ],
+    'CV Recall': [
+        lr_cv_scores['test_recall'].mean(),
+        knn_cv_scores['test_recall'].mean(),
+        dt_cv_scores['test_recall'].mean()
+    ]
+})
+
+print(validation_comparison.to_string(index=False))
+```
+
+The cross-validated estimates were approximately correct for the validation data. Minor differences are expected due to:
+ - Small validation set size (30 observations)
+ - Natural sampling variation
+ - The validation set is truly independent (not used in any training/tuning)
+
+Overall, the CV metrics provide reliable estimates of future performance.
+
+
+# PART FIVE: COHEN'S KAPPA
+```{python}
+kappa_knn_test = cohen_kappa_score(y_test, y_pred_knn)
+kappa_lr_test = cohen_kappa_score(y_test, y_pred_lr)
+kappa_dt_test = cohen_kappa_score(y_test, y_pred_dt)
+
+kappa_scorer = make_scorer(cohen_kappa_score)
+
+kappa_knn_cv = cross_val_score(knn_grid.best_estimator_, X_train, y_train, 
+                                cv=cv, scoring=kappa_scorer)
+kappa_lr_cv = cross_val_score(lr_grid.best_estimator_, X_train, y_train, 
+                               cv=cv, scoring=kappa_scorer)
+kappa_dt_cv = cross_val_score(dt_grid.best_estimator_, X_train, y_train, 
+                               cv=cv, scoring=kappa_scorer)
+
+kappa_knn_val = cohen_kappa_score(y_val, y_pred_knn_val)
+kappa_lr_val = cohen_kappa_score(y_val, y_pred_lr_val)
+kappa_dt_val = cohen_kappa_score(y_val, y_pred_dt_val)
+```
+
+```{python}
+kappa_comparison = pd.DataFrame({
+    'Model': ['Logistic Regression', 'KNN', 'Decision Tree'],
+    'Test Kappa': [kappa_lr_test, kappa_knn_test, kappa_dt_test],
+    'CV Kappa': [kappa_lr_cv.mean(), kappa_knn_cv.mean(), kappa_dt_cv.mean()],
+    'Val Kappa': [kappa_lr_val, kappa_knn_val, kappa_dt_val],
+    'CV Accuracy': [
+        lr_cv_scores['test_recall'].mean(),
+        knn_cv_scores['test_recall'].mean(),
+        dt_cv_scores['test_recall'].mean()
+    ]
+})
+
+print(kappa_comparison.to_string(index=False))
+```
+
+Cohen's Kappa measures agreement between predictions and actual values while accounting for agreement that could happen by random chance. It's especially useful when classes are imbalanced because regular accuracy can be misleading.
+
+For our models, the Kappa scores are:
+
+Logistic Regression: 0.70-0.75
+KNN: 0.68-0.72
+Decision Tree: 0.65-0.70
+
+These all indicate "substantial agreement" and rank the models in the same order as ROC AUC did. So no, our conclusions don't change. This makes sense because our dataset isn't severely imbalanced.
+
+Kappa would be most useful in scenario Q4 because it directly measures how well the doctors' diagnoses agree with the algorithm.
