@@ -1,0 +1,212 @@
+---
+title: Practice Set p.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+```
+
+
+Our dataset consists of clinical data from patients who entered the hospital complaining of chest pain ("angina") during exercise.  The information collected includes:
+
+* `age` : Age of the patient
+
+* `sex` : Sex of the patient
+
+* `cp` : Chest Pain type
+
+    + Value 0: asymptomatic
+    + Value 1: typical angina
+    + Value 2: atypical angina
+    + Value 3: non-anginal pain
+   
+    
+* `trtbps` : resting blood pressure (in mm Hg)
+
+* `chol` : cholesterol in mg/dl fetched via BMI sensor
+
+* `restecg` : resting electrocardiographic results
+
+    + Value 0: normal
+    + Value 1: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV)
+    + Value 2: showing probable or definite left ventricular hypertrophy by Estes' criteria
+
+* `thalach` : maximum heart rate achieved during exercise
+
+* `output` : the doctor's diagnosis of whether the patient is at risk for a heart attack
+    + 0 = not at risk of heart attack
+    + 1 = at risk of heart attack
+
+## library imports here
+
+ha = pd.read_csv("https://www.dropbox.com/s/aohbr6yb9ifmc8w/heart_attack.csv?dl=1")
+
+## Q1: Natural Multiclass Models
+
+Fit a multiclass KNN, Decision Tree, and LDA for the heart disease data; this time predicting the type of chest pain (categories 0 - 3) that a patient experiences.  For the decision tree, plot the fitted tree, and interpret the first couple splits.
+
+```{python}
+ha = pd.read_csv("https://www.dropbox.com/s/aohbr6yb9ifmc8w/heart_attack.csv?dl=1")
+
+feature_cols = ['age', 'sex', 'trtbps', 'chol', 'restecg', 'thalach', 'output']
+X = ha[feature_cols].copy()
+y = ha['cp'].copy()
+
+X_train, X_test, y_train_cp, y_test_cp = train_test_split(
+    X, y, test_size=0.30, random_state=42, stratify=y
+)
+```
+
+```{python}
+knn_pipe = Pipeline([
+    ("scaler", StandardScaler()),
+    ("clf", KNeighborsClassifier(n_neighbors=7))
+])
+lda_pipe = Pipeline([
+    ("scaler", StandardScaler()),
+    ("clf", LinearDiscriminantAnalysis())
+])
+dt_pipe = Pipeline([  # pipeline for consistency; scaler not needed
+    ("clf", DecisionTreeClassifier(random_state=42, max_depth=4))
+])
+
+knn_pipe.fit(X_train, y_train_cp)
+lda_pipe.fit(X_train, y_train_cp)
+dt_pipe.fit(X_train, y_train_cp)
+
+acc_knn = accuracy_score(y_test_cp, knn_pipe.predict(X_test))
+acc_lda = accuracy_score(y_test_cp, lda_pipe.predict(X_test))
+acc_dt  = accuracy_score(y_test_cp, dt_pipe.predict(X_test))
+
+acc_df = pd.DataFrame({
+    "Model": ["KNN (k=7)", "LDA", "Decision Tree (max_depth=4)"],
+    "Test Accuracy": [acc_knn, acc_lda, acc_dt]
+}).sort_values("Test Accuracy", ascending=False, ignore_index=True)
+
+# Decision tree plot
+plt.figure(figsize=(12, 8))
+plot_tree(
+    dt_pipe.named_steps["clf"],
+    feature_names=feature_cols,
+    class_names=[str(c) for c in sorted(y.unique())],
+    filled=True,
+    rounded=True
+)
+plt.title("Decision Tree for Chest Pain Type (cp)")
+plt.tight_layout()
+plt.show()
+
+# First couple splits (stored as strings; no print)
+_tree = dt_pipe.named_steps["clf"].tree_
+_feat_idx = _tree.feature
+_thresh = _tree.threshold
+
+def _node_desc(node_id):
+    f = _feat_idx[node_id]
+    return f"{feature_cols[f]} <= {_thresh[node_id]:.3f}" if f >= 0 else "leaf"
+
+root_split = _node_desc(0)
+_left = _tree.children_left[0]
+_right = _tree.children_right[0]
+next_node = _left if _feat_idx[_left] >= 0 else _right
+next_split = _node_desc(next_node)
+
+print("\nQ1 — Multiclass Model Accuracies")
+print(acc_df.to_string(index=False))
+
+print("\nFirst Two Splits in the Decision Tree:")
+print(f"Root Split: {root_split}")
+print(f"Next Split: {next_split}")
+```
+
+
+## Q2:  OvR
+
+Create a new column in the `ha` dataset called `cp_is_3`, which is equal to `1` if the `cp` variable is equal to `3` and `0` otherwise.
+
+Then, fit a Logistic Regression to predict this new target, and report the **F1 Score**.
+
+Repeat for the other three `cp` categories.  Which category was the OvR approach best at distinguishing?
+
+```{python}
+ha["cp_is_3"] = (ha["cp"] == 3).astype(int)
+
+ovr_rows = []
+for cls in sorted(y.unique()):
+    y_train_bin = (y_train_cp == cls).astype(int)
+    y_test_bin  = (y_test_cp == cls).astype(int)
+    ovr_pipe = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=1000))
+    ])
+    ovr_pipe.fit(X_train, y_train_bin)
+    y_pred = ovr_pipe.predict(X_test)
+    f1 = f1_score(y_test_bin, y_pred, zero_division=0)
+    ovr_rows.append({"cp category": cls, "F1 (OvR LR)": f1})
+
+ovr_df = pd.DataFrame(ovr_rows).sort_values("F1 (OvR LR)", ascending=False, ignore_index=True)
+ovr_best_category = ovr_df.iloc[0]["cp category"]
+
+print("\nQ2 — One-vs-Rest Logistic Regression (OvR)")
+print(ovr_df.to_string(index=False))
+print(f"\nBest Distinguished Category (Highest F1): {ovr_best_category}")
+```
+
+## Q3: OvO
+
+Reduce your dataset to only the `0` and `1` types of chest pain.
+
+Then, fit a Logistic Regression to predict between the two groups, and report the **ROC-AUC**.  
+
+Repeat comparing category `0` to `2` and `3`.  Which pair was the OvO approach best at distinguishing?
+y_cp
+
+```{python}
+pairs = [(0,1), (0,2), (0,3)]
+ovo_rows = []
+
+for a, b in pairs:
+    mask = y.isin([a, b])
+    X_ab = X.loc[mask]
+    y_ab = y.loc[mask]
+    y_bin = (y_ab == b).astype(int)  # label class b as 1
+
+    X_tr, X_te, y_tr, y_te = train_test_split(
+        X_ab, y_bin, test_size=0.30, random_state=42, stratify=y_bin
+    )
+    ovo_pipe = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=1000))
+    ])
+    ovo_pipe.fit(X_tr, y_tr)
+    proba = ovo_pipe.predict_proba(X_te)[:, 1]
+    auc = roc_auc_score(y_te, proba)
+    ovo_rows.append({"Pair": f"{a} vs {b}", "ROC-AUC (OvO LR)": auc})
+
+ovo_df = pd.DataFrame(ovo_rows).sort_values("ROC-AUC (OvO LR)", ascending=False, ignore_index=True)
+ovo_best_pair = ovo_df.iloc[0]["Pair"]
+
+print("\nQ3 — One-vs-One Logistic Regression (OvO)")
+print(ovo_df.to_string(index=False))
+print(f"\nBest Distinguished Pair (Highest ROC-AUC): {ovo_best_pair}")
+```
