@@ -1,0 +1,142 @@
+---
+title: Practice Set p.1
+echo: true
+fig-height: 3.5
+fig-width: 6
+execute:
+    warning: false
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+---
+GitHub link: https://github.com/TylerWolfWilliams/GSB-544
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
+```
+
+## The Data
+
+At this link, you will find a dataset containing information about heart disease patients: https://www.dropbox.com/scl/fi/0vrpdnq5asmeulc4gd50y/ha_1.csv?rlkey=ciisalceotl77ffqhqe3kujzv&dl=1
+
+A description of the original dataset can be found here: https://archive.ics.uci.edu/dataset/45/heart+disease (However, this dataset has been cleaned and reduced, and the people have been given fictious names.)
+
+```{python}
+url = "https://www.dropbox.com/scl/fi/0vrpdnq5asmeulc4gd50y/ha_1.csv?rlkey=ciisalceotl77ffqhqe3kujzv&dl=1"
+df = pd.read_csv(url)
+
+X = df[['age', 'chol']]
+y = (df['diagnosis'] == 'Disease').astype(int)
+```
+
+## 1. Logistic Regression
+
+Fit a Logistic Regression using only `age` and `chol` (cholesterol) as predictors.
+
+For a 55 year old, how high would their cholesterol need to be for the doctors to predict heart disease is present?
+
+How high for the doctors to estimate a 90% chance that heart disease is present?
+
+```{python}
+lr_model = LogisticRegression(random_state=42, max_iter=1000)
+lr_model.fit(X, y)
+
+# For a 55 year old, find cholesterol for 50% probability
+age_55 = 55
+chol_lr_50 = -(lr_model.intercept_[0] + lr_model.coef_[0][0] * age_55) / lr_model.coef_[0][1]
+
+# For 90% probability
+log_odds_90 = np.log(0.9 / 0.1)
+chol_lr_90 = (log_odds_90 - lr_model.intercept_[0] - lr_model.coef_[0][0] * age_55) / lr_model.coef_[0][1]
+```
+
+
+## 2. Linear Discriminant Analysis
+
+Fit an LDA model using only `age` and `chol` (cholesterol)  as predictors.
+
+For a 55 year old, how high would their cholesterol need to be for the doctors to predict heart disease is present?
+
+```{python}
+lda_model = LinearDiscriminantAnalysis()
+lda_model.fit(X, y)
+
+# For a 55 year old, find cholesterol for 50% probability
+chol_lda_50 = -(lda_model.intercept_[0] + lda_model.coef_[0][0] * age_55) / lda_model.coef_[0][1]
+```
+
+## 3. Support Vector Classifier
+
+Fit an SVC model using only `age` and `chol` as predictors.  Don't forget to tune the regularization parameter.
+
+For a 55 year old, how high would their cholesterol need to be for the doctors to predict heart disease is present?
+
+```{python}
+svc_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', SVC(kernel='linear', random_state=42))
+])
+
+param_grid = {'classifier__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000]}
+grid_search = GridSearchCV(svc_pipeline, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X, y)
+
+svc_pipeline = grid_search.best_estimator_
+best_C = grid_search.best_params_['classifier__C']
+
+svc_scaler = svc_pipeline.named_steps['scaler']
+svc_model = svc_pipeline.named_steps['classifier']
+
+# Convert coefficients back to original scale
+w_svc = svc_model.coef_[0]
+b_svc = svc_model.intercept_[0]
+w_svc_original = w_svc / svc_scaler.scale_
+b_svc_original = b_svc - np.dot(w_svc / svc_scaler.scale_, svc_scaler.mean_)
+
+# For a 55 year old, find cholesterol at decision boundary
+chol_svc_50 = -(b_svc_original + w_svc_original[0] * age_55) / w_svc_original[1]
+```
+
+## 4. Comparing Decision Boundaries
+
+Make a scatterplot of `age` and `chol`, coloring the points by their true disease outcome.  Add a line to the plot representing the **linear separator** (aka **decision boundary**) for each of the three models above.
+
+
+```{python}
+X_arr = np.asarray(X)
+y_arr = np.asarray(y)
+
+fig, ax = plt.subplots()
+
+# Scatter of true outcomes (0 = no disease, 1 = disease)
+for cls, lbl in zip([0, 1], ["No Disease", "Disease"]):
+    m = (y_arr == cls)
+    ax.scatter(X_arr[m, 0], X_arr[m, 1], label=lbl)
+
+# Age span for decision boundaries
+age_min, age_max = X_arr[:, 0].min(), X_arr[:, 0].max()
+age_range = np.array([age_min, age_max])
+
+# Decision boundaries: solve w0*age + w1*chol + b = 0  -> chol = -(b + w0*age)/w1
+chol_lr = -(lr_model.intercept_[0] + lr_model.coef_[0, 0] * age_range) / lr_model.coef_[0, 1]
+chol_lda = -(lda_model.intercept_[0] + lda_model.coef_[0, 0] * age_range) / lda_model.coef_[0, 1]
+chol_svc = -(b_svc_original + w_svc_original[0] * age_range) / w_svc_original[1]
+
+ax.plot(age_range, chol_lr, label="Logistic Regression")
+ax.plot(age_range, chol_lda, label="LDA")
+ax.plot(age_range, chol_svc, label="SVC")
+
+ax.set_xlabel("Age")
+ax.set_ylabel("Chol")
+ax.legend()
+plt.show()
+```
